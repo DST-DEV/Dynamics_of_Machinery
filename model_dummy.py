@@ -48,7 +48,7 @@ deltaT = 0.0001
 n_int = int(100000)
 
 # Initial conditions
-omega = np.pi   # constant rotational speed (rad/s) — adjust as needed
+omega = np.pi  # constant rotational speed (rad/s) — adjust as needed
 theta = np.zeros(n_int)
 theta[0] = np.pi / 2
 thetad = np.zeros(n_int)
@@ -360,6 +360,20 @@ for i in range(1, n_int):
     Id[i] = rIoa + rIab + rIbc + rIcd
     Ie[i] = rIoa + rIab + rIbc + rIcd + T45.T @ rB5de
     If[i] = rIoa + rIab + rIbc + rIcd + T45.T @ rB5df
+
+    # creating the speed and acceleration vectors describing masses trajectories over time
+    dIa[i] = (Ia[i] - Ia[i - 1]) / deltaT
+    ddIa[i] = (dIa[i] - dIa[i - 1]) / deltaT
+    dIb[i] = (Ib[i] - Ib[i - 1]) / deltaT
+    ddIb[i] = (dIb[i] - dIb[i - 1]) / deltaT
+    dIc[i] = (Ic[i] - Ic[i - 1]) / deltaT
+    ddIc[i] = (dIc[i] - dIc[i - 1]) / deltaT
+    dId[i] = (Id[i] - Id[i - 1]) / deltaT
+    ddId[i] = (dId[i] - dId[i - 1]) / deltaT
+    dIe[i] = (Ie[i] - Ie[i - 1]) / deltaT
+    ddIe[i] = (dIe[i] - dIe[i - 1]) / deltaT
+    dIf[i] = (If[i] - If[i - 1]) / deltaT
+    ddIf[i] = (dIf[i] - dIf[i - 1]) / deltaT
 
 # ── Animation ────────────────────────────────────────────────────────────────
 import matplotlib.pyplot as plt
