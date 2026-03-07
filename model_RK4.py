@@ -41,6 +41,13 @@ k4 = 2 * (12 * E * I1) / l4**3
 k5 = (3 * E * I2) / l5**3
 k6 = (3 * E * I2) / l6**3
 
+PI1y = m1 * g
+PI2y = m2 * g
+PI3y = m3 * g
+PI4y = m4 * g
+PI5y = m5 * g
+PI6y = m6 * g
+
 # %% Integrator settings
 deltaT = 0.0001
 n_int = int(np.ceil(T / deltaT)) + 1
@@ -73,17 +80,25 @@ def derivatives(s, t):
     sin_th = np.sin(th_)
     cos_th = np.cos(th_)
 
-    w1dd_ = 48 * E * I1 * (w2_ * l1 ** 3 - w1_ * l2 ** 3) / l1 ** 3 / l2 ** 3 / m1
+    w1dd_ = (-k1 * w1_ + k2 * w2_) / m1
+    w2dd_ = (-k2 * (m1 + m2) * w2_ + w1_ * k1 * m2 + k3 * w3_ * m1) / m2 / m1
+    w3dd_ = (-k3 * (m2 + m3) * w3_ + w2_ * k2 * m3 + w4_ * k4 * m2) / m3 / m2
+    w4dd_ = (m3 * sin_th * (m5 * w5_ - m6 * w6_) * thetadd_ - m3 * sin_th * (l5 * m5 + l6 * m6) * thetad_ ** 2 + 2 * m3 * sin_th * (m5 * w5d_ - m6 * w6d_) * thetad_ + (k3 * w3_ - k4 * w4_) * (m5 - m6) * sin_th ** 2 + cos_th * m3 * (PI5y - PI6y) * sin_th + m3 * (k5 * w5_ + k6 * w6_) * cos_th - k4 * (m3 + m4) * w4_ + w3_ * k3 * m4) / (sin_th ** 2 * (m5 - m6) + m4) / m3
+    w5dd_ = (-m5 * (-l5 * (m5 - m6) * sin_th ** 2 + sin_th * (m5 * w5_ - m6 * w6_) * cos_th - l5 * m4) * thetadd_ + m5 * (w5_ * (m5 - m6) * sin_th ** 2 + sin_th * (l5 * m5 + l6 * m6) * cos_th + w5_ * m4) * thetad_ ** 2 - 2 * cos_th * sin_th * m5 * (m5 * w5d_ - m6 * w6d_) * thetad_ + sin_th ** 3 * PI5y * m6 + w5_ * sin_th ** 2 * k5 * m6 + (PI6y * m5 * cos_th ** 2 - PI5y * (m5 + m4)) * sin_th - w6_ * cos_th ** 2 * k6 * m5 + w4_ * cos_th * k4 * m5 - w5_ * k5 * (m5 + m4)) / m5 / (sin_th ** 2 * (m5 - m6) + m4)
+    w6dd_ = (-(l6 * (m5 - m6) * sin_th ** 2 + sin_th * (m5 * w5_ - m6 * w6_) * cos_th + l6 * m4) * m6 * thetadd_ + (w6_ * (m5 - m6) * sin_th ** 2 + sin_th * (l5 * m5 + l6 * m6) * cos_th + w6_ * m4) * m6 * thetad_ ** 2 - 2 * cos_th * sin_th * m6 * (m5 * w5d_ - m6 * w6d_) * thetad_ - sin_th ** 3 * PI6y * m5 - w6_ * sin_th ** 2 * k6 * m5 + (-m6 * PI5y * cos_th ** 2 - PI6y * (m4 - m6)) * sin_th - m6 * (k5 * w5_ + 2 * k6 * w6_) * cos_th ** 2 + w4_ * cos_th * k4 * m6 - w6_ * k6 * (m4 - m6)) / (sin_th ** 2 * (m5 - m6) + m4) / m6
 
-    w2dd_ = -48 * E * (l1 ** 3 * l3 ** 3 * (m1 + m2) * w2_ - l2 ** 3 * (l1 ** 3 * w3_ * m1 + 2 * l3 ** 3 * w1_ * m2) / 2) * I1 / m2 / l2 ** 3 / l3 ** 3 / l1 ** 3 / m1
-
-    w3dd_ = -24 * E * (l2 ** 3 * l4 ** 3 * (m2 + m3) * w3_ - l3 ** 3 * (l2 ** 3 * w4_ * m2 + 2 * l4 ** 3 * w2_ * m3)) * I1 / m3 / l3 ** 3 / l4 ** 3 / l2 ** 3 / m2
-
-    w4dd_ = (m3 * sin_th * l3 ** 3 * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5_ - m6 * w6_) * thetadd_ - m3 * sin_th * l3 ** 3 * l4 ** 3 * l5 ** 3 * l6 ** 3 * (l5 * m5 + l6 * m6) * thetad_ ** 2 + 2 * m3 * sin_th * l3 ** 3 * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5d[i-1] - m6 * w6d[i-1]) * thetad_ + 24 * E * I1 * l5 ** 3 * l6 ** 3 * (-w4_ * l3 ** 3 + w3_ * l4 ** 3) * (m5 - m6) * sin_th ** 2 + m3 * g * cos_th * l3 ** 3 * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 - m6) * sin_th - 24 * (-m3 * I2 * l3 ** 3 * l4 ** 3 * (w6_ * l5 ** 3 + w5_ * l6 ** 3) * cos_th / 8 + l5 ** 3 * I1 * (l3 ** 3 * (m3 + m4) * w4_ - m4 * w3_ * l4 ** 3) * l6 ** 3) * E) / l6 ** 3 / m3 / l4 ** 3 / (sin_th ** 2 * (m5 - m6) + m4) / l5 ** 3 / l3 ** 3
-
-    w5dd_ = (-m5 * l5 ** 3 * (-l5 * (m5 - m6) * sin_th ** 2 + sin_th * (m5 * w5_ - m6 * w6_) * cos_th - l5 * m4) * l6 ** 3 * l4 ** 3 * thetadd_ + m5 * l5 ** 3 * (w5_ * (m5 - m6) * sin_th ** 2 + sin_th * (l5 * m5 + l6 * m6) * cos_th + w5_ * m4) * l6 ** 3 * l4 ** 3 * thetad_ ** 2 - 2 * m5 * cos_th * sin_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5d[i-1] - m6 * w6d[i-1]) * thetad_ + 3 * E * I2 * l4 ** 3 * w5_ * sin_th ** 2 * l6 ** 3 * m6 - m5 * g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m4 + m5 - m6) * sin_th + 24 * (-m5 * w6_ * cos_th ** 2 * I2 * l4 ** 3 * l5 ** 3 / 8 + m5 * w4_ * cos_th * I1 * l5 ** 3 * l6 ** 3 - w5_ * I2 * l4 ** 3 * l6 ** 3 * (m5 + m4) / 8) * E) / m5 / l5 ** 3 / (sin_th ** 2 * (m5 - m6) + m4) / l6 ** 3 / l4 ** 3
-
-    w6dd_ = (-m6 * l5 ** 3 * l6 ** 3 * (l6 * (m5 - m6) * sin_th ** 2 + sin_th * (m5 * w5_ - m6 * w6_) * cos_th + l6 * m4) * l4 ** 3 * thetadd_ + m6 * l5 ** 3 * l6 ** 3 * (w6_ * (m5 - m6) * sin_th ** 2 + sin_th * (l5 * m5 + l6 * m6) * cos_th + w6_ * m4) * l4 ** 3 * thetad_ ** 2 - 2 * m6 * cos_th * sin_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5d[i-1] - m6 * w6d[i-1]) * thetad_ - 3 * E * I2 * l4 ** 3 * l5 ** 3 * w6_ * sin_th ** 2 * m5 - m6 * g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m4 + m5 - m6) * sin_th + 24 * E * (-m6 * I2 * l4 ** 3 * (2 * w6_ * l5 ** 3 + w5_ * l6 ** 3) * cos_th ** 2 / 8 + m6 * w4_ * cos_th * I1 * l5 ** 3 * l6 ** 3 + w6_ * I2 * l4 ** 3 * l5 ** 3 * (-m4 + m6) / 8)) / m6 / l5 ** 3 / (sin_th ** 2 * (m5 - m6) + m4) / l6 ** 3 / l4 ** 3
+    try:
+        np.array([
+            w1d_,  w1dd_,
+            w2d_,  w2dd_,
+            w3d_,  w3dd_,
+            w4d_,  w4dd_,
+            w5d_,  w5dd_,
+            w6d_,  w6dd_,
+            thetad_          # dtheta/dt
+            ])
+    except:
+        pass
 
 
     return np.array([
@@ -203,12 +218,12 @@ state = np.array([
 for i in range(1, n_int):
     t = t_int[i - 1]
 
-    k1 = derivatives(state,                  t)
-    k2 = derivatives(state + 0.5*deltaT*k1,  t + 0.5*deltaT)
-    k3 = derivatives(state + 0.5*deltaT*k2,  t + 0.5*deltaT)
-    k4 = derivatives(state +     deltaT*k3,  t +     deltaT)
+    d1 = derivatives(state,                  t)
+    d2 = derivatives(state + 0.5*deltaT*d1,  t + 0.5*deltaT)
+    d3 = derivatives(state + 0.5*deltaT*d2,  t + 0.5*deltaT)
+    d4 = derivatives(state +     deltaT*d3,  t +     deltaT)
 
-    state = state + (deltaT / 6.0) * (k1 + 2*k2 + 2*k3 + k4)
+    state = state + (deltaT / 6.0) * (d1 + 2*d2 + 2*d3 + d4)
 
     # Unpack state
     w1[i]  = state[0];  w1d[i]  = state[1]
@@ -237,37 +252,6 @@ for i in range(1, n_int):
     )
     T54[i] = T45[i].T
 
-# =============================================================================
-#     # Reaction forces
-#     R_I1x[i] = 48 * E * I1 * w1[i] / l1**3
-#     R_I2x[i] = 48 * E * I1 * w2[i] / l2**3
-#     R_I3x[i] = 24 * E * I1 * w3[i] / l3**3
-#     R_I4x[i] = 24 * E * I1 * w4[i] / l4**3
-#     R_B55x[i] = 3 * E * I2 * w5[i] / l5**3
-#     R_B56x[i] = -m6 * g * sin_th - 3 * E * I2 * w6[i] / l6**3
-#
-#     R_I1y[i] = (m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5[i] - m6 * w6[i]) * thetadd[i] - l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * m4 * (l5 * m5 + l6 * m6) * thetad[i] ** 2 + 2 * m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5d[i-1] - m6 * w6d[i-1]) * thetad[i] + g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 - m6) * (m2 + m3 + m1) * sin_th ** 2 - 3 * (-8 * w4[i] * I1 * l5 ** 3 * l6 ** 3 * (m5 - m6) * cos_th + I2 * l4 ** 3 * (w6[i] * l5 ** 3 + w5[i] * l6 ** 3) * (m4 + m5 - m6)) * E * sin_th + m4 * g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m2 + m3 + m4 + m5 - m6 + m1)) / (sin_th ** 2 * (m5 - m6) + m4) / l5 ** 3 / l6 ** 3 / l4 ** 3
-#     R_I2y[i] = (m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5[i] - m6 * w6[i]) * thetadd[i] - l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * m4 * (l5 * m5 + l6 * m6) * thetad[i] ** 2 + 2 * m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5d[i-1] - m6 * w6d[i-1]) * thetad[i] + g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 - m6) * (m2 + m3) * sin_th ** 2 - 3 * (-8 * w4[i] * I1 * l5 ** 3 * l6 ** 3 * (m5 - m6) * cos_th + I2 * l4 ** 3 * (w6[i] * l5 ** 3 + w5[i] * l6 ** 3) * (m4 + m5 - m6)) * E * sin_th + m4 * g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m3 + m4 + m5 - m6 + m2)) / (sin_th ** 2 * (m5 - m6) + m4) / l5 ** 3 / l6 ** 3 / l4 ** 3
-#     R_I3y[i] = (m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5[i] - m6 * w6[i]) * thetadd[i] - l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * m4 * (l5 * m5 + l6 * m6) * thetad[i] ** 2 + 2 * m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5d[i-1] - m6 * w6d[i-1]) * thetad[i] + g * l4 ** 3 * l5 ** 3 * l6 ** 3 * m3 * (m5 - m6) * sin_th ** 2 - 3 * (-8 * w4[i] * I1 * l5 ** 3 * l6 ** 3 * (m5 - m6) * cos_th + I2 * l4 ** 3 * (w6[i] * l5 ** 3 + w5[i] * l6 ** 3) * (m4 + m5 - m6)) * E * sin_th + m4 * g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m3 + m4 + m5 - m6)) / (sin_th ** 2 * (m5 - m6) + m4) / l5 ** 3 / l6 ** 3 / l4 ** 3
-#     R_I4y[i] = (m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5[i] - m6 * w6[i]) * thetadd[i] - l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * m4 * (l5 * m5 + l6 * m6) * thetad[i] ** 2 + 2 * m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5d[i-1] - m6 * w6d[i-1]) * thetad[i] + 24 * (w4[i] * I1 * l5 ** 3 * l6 ** 3 * (m5 - m6) * cos_th - I2 * l4 ** 3 * (w6[i] * l5 ** 3 + w5[i] * l6 ** 3) * (m4 + m5 - m6) / 8) * E * sin_th + g * l4 ** 3 * l5 ** 3 * l6 ** 3 * m4 * (m4 + m5 - m6)) / l5 ** 3 / (sin_th ** 2 * (m5 - m6) + m4) / l6 ** 3 / l4 ** 3
-#     R_B55y[i] = 24 * m5 * (-l5 ** 3 * l6 ** 3 * (m6 * (w5[i] - w6[i]) * sin_th ** 2 - w5[i] * m4) * l4 ** 3 * thetadd[i] / 24 + (m6 * (l5 + l6) * sin_th ** 2 - l5 * m4) * l5 ** 3 * l6 ** 3 * l4 ** 3 * thetad[i] ** 2 / 24 - ((sin_th ** 2 * m6 - m4) * w5d[i-1] - m6 * sin_th ** 2 * w6d[i-1]) * l5 ** 3 * l6 ** 3 * l4 ** 3 * thetad[i] / 12 + E * (-I2 * l4 ** 3 * (w6[i] * l5 ** 3 + w5[i] * l6 ** 3) * cos_th / 8 + I1 * w4[i] * l5 ** 3 * l6 ** 3) * sin_th + l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * g * m4 / 24) / l5 ** 3 / (sin_th ** 2 * (m5 - m6) + m4) / l6 ** 3 / l4 ** 3
-#     R_B56y[i] = 24 * m6 * (-(m5 * (w5[i] - w6[i]) * sin_th ** 2 - w6[i] * m4) * l5 ** 3 * l6 ** 3 * l4 ** 3 * thetadd[i] / 24 + l5 ** 3 * (m5 * (l5 + l6) * sin_th ** 2 + l6 * m4) * l6 ** 3 * l4 ** 3 * thetad[i] ** 2 / 24 - l5 ** 3 * ((-sin_th ** 2 * m5 - m4) * w6d[i-1] + m5 * sin_th ** 2 * w5d[i-1]) * l6 ** 3 * l4 ** 3 * thetad[i] / 12 + E * (-I2 * l4 ** 3 * (w6[i] * l5 ** 3 + w5[i] * l6 ** 3) * cos_th / 8 + I1 * w4[i] * l5 ** 3 * l6 ** 3) * sin_th + l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * g * m4 / 24) / l5 ** 3 / (sin_th ** 2 * (m5 - m6) + m4) / l6 ** 3 / l4 ** 3
-#
-#     R_I1[i, 0] = R_I2x[i] - R_I1x[i]
-#     R_I2[i, 0] = R_I3x[i] - R_I2x[i]
-#     R_I3[i, 0] = R_I4x[i] - R_I3x[i]
-#     R_I4[i, 0] = R_B55x[i] * cos_th + R_B56x[i] * cos_th - R_I4x[i] + R_B55y[i] * sin_th - R_B56y[i] * sin_th
-#     R_B55[i, 0] = -sin_th * m5 * g - R_B55x[i]
-#     R_B56[i, 0] = -sin_th * m6 * g - R_B56x[i]
-#
-#     R_I1[i, 1] = -m1 * g + R_I1y[i] - R_I2y[i]
-#     R_I2[i, 1] = -m2 * g + R_I2y[i] - R_I3y[i]
-#     R_I3[i, 1] = -m3 * g + R_I3y[i] - R_I4y[i]
-#     R_I4[i, 1] = -m4 * g + R_I4y[i] + 3 * sin_th * E * I2 / l5 ** 3 * w5[i] - cos_th * R_B55y[i] + 3 * sin_th * E * I2 / l6 ** 3 * w6[i] + cos_th * R_B56y[i]
-#     R_B55[i, 1] = -cos_th * m5 * g
-#     R_B56[i, 1] = -cos_th * m6 * g
-# =============================================================================
-
 # %% Post processing
 sin_th = np.sin(theta)
 cos_th = np.cos(theta)
@@ -280,12 +264,12 @@ R_I4x = 24 * E * I1 * w4 / l4**3
 R_B55x = 3 * E * I2 * w5 / l5**3
 R_B56x = -m6 * g * sin_th - 3 * E * I2 * w6 / l6**3
 
-R_I1y = (m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5 - m6 * w6) * thetadd - l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5d[i-1] - m6 * w6d[i-1]) * thetad + g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 - m6) * (m2 + m3 + m1) * sin_th ** 2 - 3 * (-8 * w4 * I1 * l5 ** 3 * l6 ** 3 * (m5 - m6) * cos_th + I2 * l4 ** 3 * (w6 * l5 ** 3 + w5 * l6 ** 3) * (m4 + m5 - m6)) * E * sin_th + m4 * g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m2 + m3 + m4 + m5 - m6 + m1)) / (sin_th ** 2 * (m5 - m6) + m4) / l5 ** 3 / l6 ** 3 / l4 ** 3
-R_I2y = (m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5 - m6 * w6) * thetadd - l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5d[i-1] - m6 * w6d[i-1]) * thetad + g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 - m6) * (m2 + m3) * sin_th ** 2 - 3 * (-8 * w4 * I1 * l5 ** 3 * l6 ** 3 * (m5 - m6) * cos_th + I2 * l4 ** 3 * (w6 * l5 ** 3 + w5 * l6 ** 3) * (m4 + m5 - m6)) * E * sin_th + m4 * g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m3 + m4 + m5 - m6 + m2)) / (sin_th ** 2 * (m5 - m6) + m4) / l5 ** 3 / l6 ** 3 / l4 ** 3
-R_I3y = (m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5 - m6 * w6) * thetadd - l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5d[i-1] - m6 * w6d[i-1]) * thetad + g * l4 ** 3 * l5 ** 3 * l6 ** 3 * m3 * (m5 - m6) * sin_th ** 2 - 3 * (-8 * w4 * I1 * l5 ** 3 * l6 ** 3 * (m5 - m6) * cos_th + I2 * l4 ** 3 * (w6 * l5 ** 3 + w5 * l6 ** 3) * (m4 + m5 - m6)) * E * sin_th + m4 * g * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m3 + m4 + m5 - m6)) / (sin_th ** 2 * (m5 - m6) + m4) / l5 ** 3 / l6 ** 3 / l4 ** 3
-R_I4y = (m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5 - m6 * w6) * thetadd - l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * m4 * cos_th * l4 ** 3 * l5 ** 3 * l6 ** 3 * (m5 * w5d[i-1] - m6 * w6d[i-1]) * thetad + 24 * (w4 * I1 * l5 ** 3 * l6 ** 3 * (m5 - m6) * cos_th - I2 * l4 ** 3 * (w6 * l5 ** 3 + w5 * l6 ** 3) * (m4 + m5 - m6) / 8) * E * sin_th + g * l4 ** 3 * l5 ** 3 * l6 ** 3 * m4 * (m4 + m5 - m6)) / l5 ** 3 / (sin_th ** 2 * (m5 - m6) + m4) / l6 ** 3 / l4 ** 3
-R_B55y = 24 * m5 * (-l5 ** 3 * l6 ** 3 * (m6 * (w5 - w6) * sin_th ** 2 - w5 * m4) * l4 ** 3 * thetadd / 24 + (m6 * (l5 + l6) * sin_th ** 2 - l5 * m4) * l5 ** 3 * l6 ** 3 * l4 ** 3 * thetad ** 2 / 24 - ((sin_th ** 2 * m6 - m4) * w5d[i-1] - m6 * sin_th ** 2 * w6d[i-1]) * l5 ** 3 * l6 ** 3 * l4 ** 3 * thetad / 12 + E * (-I2 * l4 ** 3 * (w6 * l5 ** 3 + w5 * l6 ** 3) * cos_th / 8 + I1 * w4 * l5 ** 3 * l6 ** 3) * sin_th + l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * g * m4 / 24) / l5 ** 3 / (sin_th ** 2 * (m5 - m6) + m4) / l6 ** 3 / l4 ** 3
-R_B56y = 24 * m6 * (-(m5 * (w5 - w6) * sin_th ** 2 - w6 * m4) * l5 ** 3 * l6 ** 3 * l4 ** 3 * thetadd / 24 + l5 ** 3 * (m5 * (l5 + l6) * sin_th ** 2 + l6 * m4) * l6 ** 3 * l4 ** 3 * thetad ** 2 / 24 - l5 ** 3 * ((-sin_th ** 2 * m5 - m4) * w6d[i-1] + m5 * sin_th ** 2 * w5d[i-1]) * l6 ** 3 * l4 ** 3 * thetad / 12 + E * (-I2 * l4 ** 3 * (w6 * l5 ** 3 + w5 * l6 ** 3) * cos_th / 8 + I1 * w4 * l5 ** 3 * l6 ** 3) * sin_th + l4 ** 3 * l5 ** 3 * l6 ** 3 * cos_th * g * m4 / 24) / l5 ** 3 / (sin_th ** 2 * (m5 - m6) + m4) / l6 ** 3 / l4 ** 3
+R_I1y = (cos_th * m4 * (m5 * w5 - m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d - m6 * w6d) * thetad + (m5 - m6) * (PI1y + PI2y + PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + m4 * ((PI5y - PI6y) * cos_th ** 2 + PI1y + PI2y + PI3y + PI4y)) / (sin_th ** 2 * (m5 - m6) + m4)
+R_I2y = (cos_th * m4 * (m5 * w5 - m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d - m6 * w6d) * thetad + (m5 - m6) * (PI2y + PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + ((PI5y - PI6y) * cos_th ** 2 + PI2y + PI3y + PI4y) * m4) / (sin_th ** 2 * (m5 - m6) + m4)
+R_I3y = (cos_th * m4 * (m5 * w5 - m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d - m6 * w6d) * thetad + (m5 - m6) * (PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + ((PI5y - PI6y) * cos_th ** 2 + PI3y + PI4y) * m4) / (sin_th ** 2 * (m5 - m6) + m4)
+R_I4y = (cos_th * m4 * (m5 * w5 - m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d - m6 * w6d) * thetad + PI4y * (m5 - m6) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + ((PI5y - PI6y) * cos_th ** 2 + PI4y) * m4) / (sin_th ** 2 * (m5 - m6) + m4)
+R_B55y = (-m5 * (m6 * (w5 - w6) * sin_th ** 2 - w5 * m4) * thetadd + m5 * (m6 * (l5 + l6) * sin_th ** 2 - l5 * m4) * thetad ** 2 - 2 * m5 * ((sin_th ** 2 * m6 - m4) * w5d - m6 * sin_th ** 2 * w6d) * thetad - cos_th * (PI5y * m6 - PI6y * m5) * sin_th ** 2 + m5 * ((-k5 * w5 - k6 * w6) * cos_th + k4 * w4) * sin_th + cos_th * PI5y * m4) / (sin_th ** 2 * (m5 - m6) + m4)
+R_B56y = (-(m5 * (w5 - w6) * sin_th ** 2 - w6 * m4) * m6 * thetadd + (m5 * (l5 + l6) * sin_th ** 2 + l6 * m4) * m6 * thetad ** 2 - 2 * ((-sin_th ** 2 * m5 - m4) * w6d + m5 * sin_th ** 2 * w5d) * m6 * thetad - cos_th * (PI5y * m6 - PI6y * m5) * sin_th ** 2 + ((-k5 * w5 - k6 * w6) * cos_th + k4 * w4) * m6 * sin_th + cos_th * PI6y * m4) / (sin_th ** 2 * (m5 - m6) + m4)
 
 R_I1[:, 0] = R_I2x - R_I1x
 R_I2[:, 0] = R_I3x - R_I2x
@@ -294,12 +278,12 @@ R_I4[:, 0] = R_B55x * cos_th + R_B56x * cos_th - R_I4x + R_B55y * sin_th - R_B56
 R_B55[:, 0] = -sin_th * m5 * g - R_B55x
 R_B56[:, 0] = -sin_th * m6 * g - R_B56x
 
-R_I1[:, 1] = -m1 * g + R_I1y - R_I2y
-R_I2[:, 1] = -m2 * g + R_I2y - R_I3y
-R_I3[:, 1] = -m3 * g + R_I3y - R_I4y
-R_I4[:, 1] = -m4 * g + R_I4y + 3 * sin_th * E * I2 / l5 ** 3 * w5 - cos_th * R_B55y + 3 * sin_th * E * I2 / l6 ** 3 * w6 + cos_th * R_B56y
-R_B55[:, 1] = -cos_th * m5 * g
-R_B56[:, 1] = -cos_th * m6 * g
+R_I1[:, 1] = -PI1y + R_I1y - R_I2y
+R_I2[:, 1] = -PI2y + R_I2y - R_I3y
+R_I3[:, 1] = -PI3y + R_I3y - R_I4y
+R_I4[:, 1] = -PI4y + R_I4y + k5 * w5 * sin_th - cos_th * R_B55y + k6 * w6 * sin_th + cos_th * R_B56y
+R_B55[:, 1] = -cos_th * PI5y
+R_B56[:, 1] = -cos_th * PI6y
 
 
 # Relative position vectors
