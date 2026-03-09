@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 import numpy as np
 from scipy.linalg import eig
@@ -6,9 +7,11 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 import scivis
+try: import numpyTolatex
+except: pass
 
 # %% User settings
-show_plots = True
+show_plots = False
 save_fig = True
 
 exp_fld = Path(__file__).parent / "plots"
@@ -95,6 +98,21 @@ eigfreqs_lin90 = eigfreqs_lin90[idx_sorted]
 eigval_lin90 = eigval_lin90[idx_sorted]
 eigvec_lin90 = eigvec_lin90[:, idx_sorted]
 
+# Normalize eigenvectors
+idx = 6 + np.argmax(np.abs(eigvec_lin90[6:]), axis=0)
+scale = eigvec_lin90[idx, np.arange(eigvec_lin90.shape[1])]
+eigvec_lin90_norm = np.round(eigvec_lin90 / scale, 4)
+
+if "numpyTolatex" in sys.modules:
+    tab_lin90 = numpyTolatex.np2latex(
+        np.hstack([eigfreqs_lin90[::2].reshape((-1, 1)),
+                   eigvec_lin90_norm[6:, ::2].real.T]),
+        body_only=True)
+
+    print("Eigenfrequency and eigenvalue table for 90 deg lineraization:")
+    print(tab_lin90)
+    print()
+
 # %%% Linearized at 0 deg
 A_lin0 = np.block([[M_lin0, zero_mat],
                     [zero_mat, M_lin0]])
@@ -110,6 +128,21 @@ eigfreqs_lin0 = eigfreqs_lin0[idx_sorted]
 eigval_lin0 = eigval_lin0[idx_sorted]
 eigvec_lin0 = eigvec_lin0[:, idx_sorted]
 
+# Normalize eigenvectors
+idx = 6 + np.argmax(np.abs(eigvec_lin0[6:]), axis=0)
+scale = eigvec_lin0[idx, np.arange(eigvec_lin0.shape[1])]
+eigvec_lin0_norm = np.round(eigvec_lin0 / scale, 4)
+
+# Create latex table for eigenfrequencies and eigenvectors
+if "numpyTolatex" in sys.modules:
+    tab_lin0 = numpyTolatex.np2latex(
+        np.hstack([eigfreqs_lin0[::2].reshape((-1, 1)),
+                   eigvec_lin0_norm[6:, ::2].real.T]),
+        body_only=True)
+
+    print("Eigenfrequency and eigenvalue table for 0 deg lineraization:")
+    print(tab_lin0)
+    print()
 
 # %% Calculate damping parameters for proportional damping
 b = np.full((6,1), xi)
@@ -238,3 +271,19 @@ eigvec_lin0D = eigvec_lin0D[:, idx_sorted]
 
 xi_D3 = alpha_D3 / (2*abs(eigval_lin0D)) + beta_D3 * abs(eigval_lin0D)/ 2
 eigfreqs_lin0D2 = eigfreqs_lin0 * np.sqrt(1-xi_D3**2)
+
+# Normalize eigenvectors
+idx = 6 + np.argmax(np.abs(eigvec_lin0D[6:]), axis=0)
+scale = eigvec_lin0D[idx, np.arange(eigvec_lin0D.shape[1])]
+eigvec_lin0D_norm = np.round(eigvec_lin0D / scale, 4)
+
+
+if "numpyTolatex" in sys.modules:
+    tab_damp = numpyTolatex.np2latex(
+        np.hstack([eigfreqs_lin0D[::2].reshape((-1, 1)),
+                   eigvec_lin0D_norm[6:, ::2].real.T]),
+        body_only=True)
+
+    print("Damped Eigenfrequency and eigenvalue table for 0 deg lineraization:")
+    print(tab_lin0)
+    print()
