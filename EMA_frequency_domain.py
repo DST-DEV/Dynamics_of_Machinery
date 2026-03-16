@@ -117,23 +117,40 @@ fig1.tight_layout()
 
 # ═══════════════════════════════════════════════════════
 # PHASE 1 – IDENTIFY 6 NATURAL FREQUENCIES
-# Composite FRF = sum of |H2|² across all DOFs to capture
-# every mode regardless of which accelerometer catches it.
+# Guided search: for each expected frequency, run find_peaks
+# inside a ±search_bw window of the composite FRF and keep
+# the most prominent one. Falls back to argmax if no peak
+# is found (e.g. very flat region due to low coherence).
 # ═══════════════════════════════════════════════════════
 H2_composite = np.sum(np.abs(H2[:, freq_idx]) ** 2, axis=0)
-H2_composite /= H2_composite.max()  # normalise for threshold
+H2_composite /= H2_composite.max()
 
+expected_fn = np.array([1.27, 1.77, 2.30, 4.40, 6.71, 8.85])
+search_bw = 0.35  # search each mode inside ±0.35 Hz around its expected position
 df = F_p[1] - F_p[0]  # frequency resolution [Hz]
-min_dist = max(3, int(0.3 / df))  # at least 0.3 Hz between peaks
+min_dist = max(1, int(0.15 / df))  # local minimum spacing inside each search window
 
-all_peaks, _ = find_peaks(
-    H2_composite, distance=min_dist, height=H2_composite.max() * 0.002
-)
+identified_peaks = []
+for target_fn in expected_fn:
+    in_window = np.where(
+        (F_p >= target_fn - search_bw) & (F_p <= target_fn + search_bw)
+    )[0]
 
-# Keep the 6 most prominent peaks
-proms, _, _ = peak_prominences(H2_composite, all_peaks)
-top_idx = np.argsort(proms)[::-1][:N_ACC]
-top6_peaks = np.sort(all_peaks[top_idx])  # sorted by frequency
+    if len(in_window) == 0:
+        identified_peaks.append(int(np.argmin(np.abs(F_p - target_fn))))
+        continue
+
+    window_response = H2_composite[in_window]
+    local_peaks, _ = find_peaks(window_response, distance=min_dist)
+
+    if len(local_peaks) > 0:
+        local_proms, _, _ = peak_prominences(window_response, local_peaks)
+        best_local_peak = local_peaks[int(np.argmax(local_proms))]
+        identified_peaks.append(int(in_window[best_local_peak]))
+    else:
+        identified_peaks.append(int(in_window[np.argmax(window_response)]))
+
+top6_peaks = np.array(identified_peaks, dtype=int)
 
 fn_exp = F_p[top6_peaks]  # natural frequencies [Hz]
 wn_exp = 2 * np.pi * fn_exp  # [rad/s]
@@ -141,116 +158,173 @@ wn_exp = 2 * np.pi * fn_exp  # [rad/s]
 print("\n" + "=" * 58)
 print("  PHASE 1 – IDENTIFIED NATURAL FREQUENCIES")
 print("=" * 58)
-print(f"  {'Mode':>4}  {'fn [Hz]':>10}  {'ωn [rad/s]':>12}")
+print(f"  {'Mode':>4}  {'fn [Hz]':>10}  {'wn [rad/s]':>12}")
 print("  " + "-" * 30)
 for k, (fn, wn) in enumerate(zip(fn_exp, wn_exp), 1):
     print(f"  {k:>4}  {fn:>10.4f}  {wn:>12.4f}")
 
 # ═══════════════════════════════════════════════════════
-# PHASE 2 – MODAL PARAMETERS  (half-power bandwidth)
+# PHASE 2 – MODAL PARAMETERS  (Least squares fit of 1-DOF model)
+# ═══════════════════════════════════════════════════════
+fit_radius = 2
+
+modal_mass = np.zeros((N_ACC, N_ACC))
+modal_stiffness = np.zeros((N_ACC, N_ACC))
+modal_damping = np.zeros((N_ACC, N_ACC))
+modal_zeta = np.zeros((N_ACC, N_ACC))
+mode_shapes = np.zeros((N_ACC, N_ACC))
+
+for mode_idx, peak_idx in enumerate(top6_peaks):
+    start_idx = max(0, peak_idx - fit_radius)
+    stop_idx = min(len(F_p), peak_idx + fit_radius + 1)
+    fit_idx = np.arange(start_idx, stop_idx)
+
+    omega_fit = 2 * np.pi * F_p[fit_idx]
+    peak_shape = H1[:, peak_idx].imag.copy()
+    ref_sign = np.sign(peak_shape[np.argmax(np.abs(peak_shape))])
+    if ref_sign == 0:
+        ref_sign = 1.0
+    mode_shapes[:, mode_idx] = peak_shape / np.max(np.abs(peak_shape)) * ref_sign
+
+    for acc_idx in range(N_ACC):
+        frf_fit = H1[acc_idx, fit_idx]
+        valid = np.abs(frf_fit) > 1e-12
+
+        if np.count_nonzero(valid) < 3:
+            continue
+
+        omega_valid = omega_fit[valid]
+        frf_valid = frf_fit[valid]
+        dynamic_term = -(omega_valid**2) / frf_valid
+
+        real_system = np.column_stack((-(omega_valid**2), np.ones_like(omega_valid)))
+        imag_system = omega_valid[:, None]
+
+        m_fit, k_fit = np.linalg.lstsq(real_system, dynamic_term.real, rcond=None)[0]
+        d_fit = np.linalg.lstsq(imag_system, dynamic_term.imag, rcond=None)[0][0]
+
+        modal_mass[acc_idx, mode_idx] = m_fit
+        modal_stiffness[acc_idx, mode_idx] = k_fit
+        modal_damping[acc_idx, mode_idx] = d_fit
+
+        if (m_fit > 0 and k_fit < 0) or (m_fit < 0 and k_fit > 0):
+            modal_zeta[acc_idx, mode_idx] = np.nan
+        else:
+            modal_zeta[acc_idx, mode_idx] = d_fit / (2 * np.sqrt(m_fit * k_fit))
+
+print("\n" + "=" * 86)
+print(
+    "  PHASE 2 (Least Square Method)  – MODAL PARAMETERS FROM H1 (PER ACCELEROMETER / MODE)"
+)
+print("=" * 86)
+
+phase2_lines = []
+phase2_lines.append("=" * 86)
+phase2_lines.append(
+    "  PHASE 2 (Least Square Method) - MODAL PARAMETERS FROM H1 (PER ACCELEROMETER / MODE)"
+)
+phase2_lines.append("=" * 86)
+
+for mode_idx, fn in enumerate(fn_exp):
+    print(f"\n  Mode {mode_idx + 1}  |  fn = {fn:0.4f} Hz")
+    print(
+        f"  {'Acc':>6}  {'m_modal':>12}  {'k_modal':>12}  {'d_modal':>12}  {'zeta':>10}"
+    )
+    print("  " + "-" * 62)
+
+    phase2_lines.append("")
+    phase2_lines.append(f"  Mode {mode_idx + 1}  |  fn = {fn:0.4f} Hz")
+    phase2_lines.append(
+        f"  {'Acc':>6}  {'m_modal':>12}  {'k_modal':>12}  {'d_modal':>12}  {'zeta':>10}"
+    )
+    phase2_lines.append("  " + "-" * 62)
+
+    for acc_idx in range(N_ACC):
+        row = (
+            f"  {acc_names[acc_idx]:>6}  "
+            f"{modal_mass[acc_idx, mode_idx]:>12.4e}  "
+            f"{modal_stiffness[acc_idx, mode_idx]:>12.4e}  "
+            f"{modal_damping[acc_idx, mode_idx]:>12.4e}  "
+            f"{modal_zeta[acc_idx, mode_idx]:>10.4f}"
+        )
+        print(row)
+        phase2_lines.append(row)
+
+modal_table_txt_path = "EMA_modal_mass_stiffness_damping.txt"
+with open(modal_table_txt_path, "w", encoding="utf-8") as txt_file:
+    txt_file.write("\n".join(phase2_lines) + "\n")
+
+print(f"\nSaved modal parameter table to: {modal_table_txt_path}")
+
+# ═══════════════════════════════════════════════════════
+# PHASE 2 – MODAL PARAMETERS  (Half power point method)
 # ═══════════════════════════════════════════════════════
 
+# Determine damping through the -3 dB (half-power) bandwidth around each peak.
+modal_zeta_hpp = np.full((N_ACC, N_ACC), np.nan)
 
-def half_power_bw(F_arr, H_mag, pk_idx):
-    """
-    Return (f1, f2, fn, xi) using the −3 dB (half-power) bandwidth.
-    Linear interpolation is used between frequency bins.
-    """
-    Hpk = H_mag[pk_idx]
-    fn = F_arr[pk_idx]
-    half = Hpk / np.sqrt(2.0)
+for mode_idx, peak_idx in enumerate(top6_peaks):
+    omega_n = 2 * np.pi * F_p[peak_idx]
 
-    # Left crossing
-    left = pk_idx
-    while left > 0 and H_mag[left] > half:
-        left -= 1
-    if left == 0:
-        f1 = F_arr[0]
-    else:
-        slope = H_mag[left + 1] - H_mag[left]
-        f1 = (
-            F_arr[left] + (half - H_mag[left]) / slope * df
-            if abs(slope) > 1e-30
-            else F_arr[left]
-        )
+    for acc_idx in range(N_ACC):
+        frf_mag = np.abs(H1[acc_idx, freq_idx])
+        peak_amp = frf_mag[peak_idx]
 
-    # Right crossing
-    right = pk_idx
-    while right < len(H_mag) - 1 and H_mag[right] > half:
-        right += 1
-    if right == len(H_mag) - 1:
-        f2 = F_arr[-1]
-    else:
-        slope = H_mag[right] - H_mag[right - 1]
-        f2 = (
-            F_arr[right - 1] + (half - H_mag[right - 1]) / slope * df
-            if abs(slope) > 1e-30
-            else F_arr[right]
-        )
+        if peak_amp <= 0:
+            continue
 
-    xi = (f2 - f1) / (2.0 * fn)
-    return f1, f2, fn, xi
+        target_amp = peak_amp / np.sqrt(2)
+        idx_lower = peak_idx
+        idx_upper = peak_idx
 
+        while idx_lower > 0 and frf_mag[idx_lower] > target_amp:
+            idx_lower -= 1
 
-modal_results = []
-mode_shapes = np.zeros((N_ACC, N_ACC))  # [dof, mode]
+        while idx_upper < len(frf_mag) - 1 and frf_mag[idx_upper] > target_amp:
+            idx_upper += 1
 
-print("\n" + "=" * 78)
-print("  PHASE 2 – MODAL PARAMETERS  (half-power bandwidth / 1-DOF model)")
-print("=" * 78)
+        if idx_lower == 0 or idx_upper == len(frf_mag) - 1:
+            continue
+
+        omega_lower = 2 * np.pi * F_p[idx_lower]
+        omega_upper = 2 * np.pi * F_p[idx_upper]
+        modal_zeta_hpp[acc_idx, mode_idx] = (omega_upper - omega_lower) / (2 * omega_n)
+
+print("\n" + "=" * 86)
 print(
-    f"  {'Mode':>4}  {'fn [Hz]':>8}  {'ξ [-]':>9}  "
-    f"{'m_modal [kg]':>13}  {'d_modal [Ns/m]':>15}  {'k_modal [N/m]':>14}"
+    "  PHASE 2 (Half Power Point)  – MODAL PARAMETERS FROM H1 (PER ACCELEROMETER / MODE)"
 )
-print("  " + "-" * 72)
+print("=" * 86)
 
-for mi, pk_idx in enumerate(top6_peaks):
-    # Use the DOF with the largest response at this mode for bandwidth
-    dof_ref = int(np.argmax(np.abs(H2[:, freq_idx][:, pk_idx])))
-    H_ref = np.abs(H2[dof_ref, freq_idx])
+phase2_lines = []
+phase2_lines.append("=" * 86)
+phase2_lines.append(
+    "  PHASE 2 (Half Power Point) - MODAL PARAMETERS FROM H1 (PER ACCELEROMETER / MODE)"
+)
+phase2_lines.append("=" * 86)
 
-    f1, f2, fn_bw, xi = half_power_bw(F_p, H_ref, pk_idx)
-    wn = 2.0 * np.pi * fn_bw
-    Hpk = H_ref[pk_idx]
+for mode_idx, fn in enumerate(fn_exp):
+    print(f"\n  Mode {mode_idx + 1}  |  fn = {fn:0.4f} Hz")
+    print(f"  {'Acc':>6} {'zeta':>10}")
+    print("  " + "-" * 62)
 
-    # 1-DOF identification (eq. 5–8 from manual):
-    #   |H(ωn)| = 1 / (2 ξ ωn² m)
-    m_modal = 1.0 / (2.0 * xi * wn**2 * Hpk)
-    k_modal = m_modal * wn**2
-    d_modal = 2.0 * xi * m_modal * wn
+    phase2_lines.append("")
+    phase2_lines.append(f"  Mode {mode_idx + 1}  |  fn = {fn:0.4f} Hz")
+    phase2_lines.append(f"  {'Acc':>6}  {'zeta':>10}")
+    phase2_lines.append("  " + "-" * 62)
 
-    modal_results.append(
-        dict(mode=mi + 1, fn=fn_bw, xi=xi, m=m_modal, d=d_modal, k=k_modal)
-    )
+    for acc_idx in range(N_ACC):
+        row = (
+            f"  {acc_names[acc_idx]:>6}  " f"{modal_zeta_hpp[acc_idx, mode_idx]:>10.4f}"
+        )
+        print(row)
+        phase2_lines.append(row)
 
-    # Mode shape: Im(H1_j(fn)) ∝ −φ_j  → sign information preserved
-    for j in range(N_ACC):
-        mode_shapes[j, mi] = np.imag(H1[j, freq_idx][pk_idx])
+modal_table_txt_path = "EMA_modal_damping_hpp.txt"
+with open(modal_table_txt_path, "w", encoding="utf-8") as txt_file:
+    txt_file.write("\n".join(phase2_lines) + "\n")
 
-    print(
-        f"  {mi+1:>4}  {fn_bw:>8.4f}  {xi:>9.5f}  "
-        f"{m_modal:>13.4f}  {d_modal:>15.5f}  {k_modal:>14.4f}"
-    )
-
-# Normalise mode shapes column-wise (reference: DOF with max |amplitude|)
-for mi in range(N_ACC):
-    col = mode_shapes[:, mi]
-    i_ref = int(np.argmax(np.abs(col)))
-    if abs(col[i_ref]) > 0:
-        mode_shapes[:, mi] = col / col[i_ref]  # signed normalisation
-
-print("\n" + "=" * 62)
-print("  PHASE 2 – EXPERIMENTAL MODE SHAPES  (normalised)")
-print("=" * 62)
-dof_labels = [f"Mass {i+1}" for i in range(N_ACC)]
-header = f"  {'DOF':<8}" + " ".join(f"{'Mode '+str(m+1):>10}" for m in range(N_ACC))
-print(header)
-print("  " + "-" * (len(header) - 2))
-for dof in range(N_ACC):
-    row = f"  {dof_labels[dof]:<8}" + " ".join(
-        f"{mode_shapes[dof, m]:>+10.4f}" for m in range(N_ACC)
-    )
-    print(row)
+print(f"\nSaved modal parameter table to: {modal_table_txt_path}")
 
 # ═══════════════════════════════════════════════════════
 # PHASE 2 – PLOT FRF WITH RESONANCE MARKERS

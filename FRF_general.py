@@ -34,7 +34,7 @@ from scipy.signal import butter, lfilter, csd, welch, coherence
 BL = 25  # Number of blocks
 Fs = 50  # sampling frequency used while acquiring the signals [Hz]
 OVLP = 1000  # "overlap" factor among the blocks (0 until N)
-acc = 5  # Select accelerometer ([1,2,3,4,5,6])
+acc = 1  # Select accelerometer ([1,2,3,4,5,6])
 # IMPORTANT:
 # With acc = 5 you choose the response of mass 5 (upper blade)
 # With acc = 1 you choose the response of mass 1 (lowest platform mass)
@@ -175,3 +175,6 @@ plt.show()
 # -------------------------------------------------------
 # Final results table: FREQ [Hz] | H1 | H2 | COHERENCE
 RESULT = np.column_stack([F[idx], H1y[idx], H2y[idx], Cy[idx]])
+print("FREQ [Hz] | H1 [(m/s²)/N] | H2 [(m/s²)/N] | COHERENCE")
+for i in range(len(F[idx])):
+    print(f"{F[idx][i]:8.2f} | {H1y[idx][i]:14.4e} | {H2y[idx][i]:14.4e} | {Cy[idx][i]:9.4f}")

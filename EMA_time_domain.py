@@ -27,6 +27,48 @@ N_MODES = 6
 
 decay_files = [f"data/Decay_Mode{i}_acc4.txt" for i in range(1, N_MODES + 1)]
 
+# Mode-specific settings for logarithmic decrement.
+# start_peak_number is 1-based after positive-peak filtering.
+# n_decrement_points is the number of peaks used, including A0.
+MODE_LOGDEC_CONFIG = [
+    {
+        "min_dist": 4,
+        "prominence": None,
+        "start_peak_number": None,
+        "n_decrement_points": 10,
+    },
+    {
+        "min_dist": 1,
+        "prominence": 0.3,
+        "start_peak_number": None,
+        "n_decrement_points": 10,
+    },
+    {
+        "min_dist": 4,
+        "prominence": None,
+        "start_peak_number": None,
+        "n_decrement_points": 10,
+    },
+    {
+        "min_dist": 4,
+        "prominence": 0.6,
+        "start_peak_number": 7,
+        "n_decrement_points": 10,
+    },
+    {
+        "min_dist": 1,
+        "prominence": None,
+        "start_peak_number": 13,
+        "n_decrement_points": 10,
+    },
+    {
+        "min_dist": 1,
+        "prominence": None,
+        "start_peak_number": 16,
+        "n_decrement_points": 10,
+    },
+]
+
 # ═══════════════════════════════════════════════════════
 # PHASE 4 SETUP – THEORETICAL MODEL (digital twin)
 # Parameters from model_dummy.py
@@ -104,7 +146,7 @@ for i, fn in enumerate(fn_th, 1):
 # ═══════════════════════════════════════════════════════
 
 
-def log_decrement(t, y, Fs):
+def log_decrement(t, y, Fs, config):
     """
     Estimate damping ratio ξ and undamped natural frequency fn [Hz]
     from a free-decay signal using the logarithmic decrement method.
@@ -113,15 +155,20 @@ def log_decrement(t, y, Fs):
                    ξ = δ / √(4π² + δ²)
 
     Strategy:
-    - Find all positive peaks with a physically-meaningful minimum spacing.
-    - Locate the global maximum peak (A₀ = true start of free decay).
-    - Use only peaks from A₀ onward (the decaying portion).
-    - Average δ over all consecutive pairs A₀/Aₙ for a robust estimate.
+    - Detect positive peaks using mode-specific peak detection parameters.
+    - Start from a user-defined peak index (or global maximum if not set).
+    - Use a user-defined number of decrement peaks for each mode.
+    - Average δ over A₀/Aₙ pairs in the selected peak segment.
     - fd estimated from mean inter-peak spacing; fn = fd / √(1−ξ²).
     """
-    # Minimum distance: at least Fs/30 samples (~33 ms), safely below 15 Hz
-    min_dist = max(5, int(Fs / 30))
-    peaks, _ = find_peaks(y, distance=min_dist)
+    min_dist = int(config.get("min_dist", 4))
+    prominence = config.get("prominence", None)
+
+    find_kwargs = {"distance": min_dist}
+    if prominence is not None:
+        find_kwargs["prominence"] = prominence
+
+    peaks, _ = find_peaks(y, **find_kwargs)
 
     # Restrict to positive peaks (genuine oscillation half-cycles)
     pos_mask = y[peaks] > 0
@@ -130,22 +177,28 @@ def log_decrement(t, y, Fs):
     if len(peaks) < 4:
         return np.nan, np.nan, np.nan, np.array([], dtype=int)
 
-    # Find the global maximum – this is A₀ (start of free decay)
-    i0 = int(np.argmax(y[peaks]))
-    decay_peaks = peaks[i0:]  # peaks from max onward
+    start_peak_number = config.get("start_peak_number", None)
+    if start_peak_number is None:
+        # Default behavior: global maximum as A0.
+        i0 = int(np.argmax(y[peaks]))
+    else:
+        # 1-based user setting mapped to valid peak index range.
+        i0 = int(np.clip(int(start_peak_number) - 1, 0, len(peaks) - 1))
+
+    # Use detected peaks from the selected start peak onward.
+    # Do not force monotonic decay, since real measurements can have local
+    # amplitude rises that should still be included in the user-selected set.
+    decay_peaks = peaks[i0:]
     decay_amps = y[decay_peaks]
 
-    # Keep only the monotonically decreasing envelope:
-    # discard any peak larger than the previous one (noise bumps)
-    keep = [0]
-    for k in range(1, len(decay_amps)):
-        if decay_amps[k] < decay_amps[keep[-1]]:
-            keep.append(k)
-    if len(keep) < 4:
-        return np.nan, np.nan, np.nan, np.array([], dtype=int)
+    n_points = config.get("n_decrement_points", None)
+    if n_points is not None:
+        n_points = max(2, int(n_points))
+        decay_peaks = decay_peaks[:n_points]
+        decay_amps = decay_amps[:n_points]
 
-    decay_peaks = decay_peaks[keep]
-    decay_amps = decay_amps[keep]
+    if len(decay_peaks) < 2:
+        return np.nan, np.nan, np.nan, np.array([], dtype=int)
 
     # Log-decrement: average (1/n)·ln(A₀/Aₙ) over all n from 1 to end
     n_total = len(decay_amps)
@@ -187,7 +240,10 @@ for i, fpath in enumerate(decay_files):
     N = len(y)
     t = np.arange(N) / Fs
 
-    fn_i, xi_i, delta_i, decay_peaks_i = log_decrement(t, y, Fs)
+    cfg_i = (
+        MODE_LOGDEC_CONFIG[i] if i < len(MODE_LOGDEC_CONFIG) else MODE_LOGDEC_CONFIG[-1]
+    )
+    fn_i, xi_i, delta_i, decay_peaks_i = log_decrement(t, y, Fs, cfg_i)
     exp_fn.append(fn_i)
     exp_xi.append(xi_i)
     exp_del.append(delta_i)
@@ -241,6 +297,7 @@ for i, fpath in enumerate(decay_files):
     if not np.isnan(fn_i):
         print(
             f"\n  Mode {i+1}: fn = {fn_i:.4f} Hz | ξ = {xi_i:.5f} | δ = {delta_i:.5f}"
+            f" | start_peak={cfg_i.get('start_peak_number')} | N_peaks={cfg_i.get('n_decrement_points')}"
         )
     else:
         print(f"\n  Mode {i+1}: peak detection failed – check signal quality")
