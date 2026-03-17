@@ -48,7 +48,7 @@ deltaT = 0.0001
 n_int = int(100000)
 
 # Initial conditions
-omega = np.pi   # constant rotational speed (rad/s) — adjust as needed
+omega = 0  # constant rotational speed (rad/s) — adjust as needed
 theta = np.zeros(n_int)
 theta[0] = np.pi / 2
 thetad = np.zeros(n_int)
@@ -360,6 +360,58 @@ for i in range(1, n_int):
     Id[i] = rIoa + rIab + rIbc + rIcd
     Ie[i] = rIoa + rIab + rIbc + rIcd + T45.T @ rB5de
     If[i] = rIoa + rIab + rIbc + rIcd + T45.T @ rB5df
+
+    # creating the speed and acceleration vectors describing masses trajectories over time
+    dIa[i] = (Ia[i] - Ia[i - 1]) / deltaT
+    ddIa[i] = (dIa[i] - dIa[i - 1]) / deltaT
+    dIb[i] = (Ib[i] - Ib[i - 1]) / deltaT
+    ddIb[i] = (dIb[i] - dIb[i - 1]) / deltaT
+    dIc[i] = (Ic[i] - Ic[i - 1]) / deltaT
+    ddIc[i] = (dIc[i] - dIc[i - 1]) / deltaT
+    dId[i] = (Id[i] - Id[i - 1]) / deltaT
+    ddId[i] = (dId[i] - dId[i - 1]) / deltaT
+    dIe[i] = (Ie[i] - Ie[i - 1]) / deltaT
+    ddIe[i] = (dIe[i] - dIe[i - 1]) / deltaT
+    dIf[i] = (If[i] - If[i - 1]) / deltaT
+    ddIf[i] = (dIf[i] - dIf[i - 1]) / deltaT
+
+# Dertermine Mass matrix
+
+val =0
+M = np.array(
+    [
+        [m1, 0, 0, 0, 0, 0],
+        [m2, m2, 0, 0, 0, 0],
+        [m3, m3, m3, 0, 0, 0],
+        [m4, m4, m4, m4, 0, 0],
+        [m5, m5, m5, m5, m5 * (np.cos(theta[val]) + np.sin(theta[val])), 0],
+        [m6, m6, m6, m6,  0, m6 * (np.cos(theta[val]) + np.sin(theta[val]))],
+    ]
+)
+
+# determine Coriolis matrix
+C = np.array(
+    [
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 2 * m5 * thetadd[val] *( np.sin(theta[val]) - np.cos(theta[val])), 0],
+        [0, 0, 0, 0, 0, 2* m6 * thetadd[val] *( np.sin(theta[val]) - np.cos(theta[val]))],
+    ]
+)
+
+# determine stiffness matrix
+K = np.array(
+    [
+        [-k1, k2, 0, 0, 0, 0],
+        [0, -k2, k3, 0, 0, 0],
+        [0, 0, -k3, k4, 0, 0],
+        [0, 0, 0, -k4, (3 * E * I2 * np.cos(theta[val]) + np.sin(theta[val])) /l5**3, (3 * E * I2 * np.cos(theta[val]) + np.sin(theta[val])) /l6**3 ],
+        [0, 0, 0, 0, (-3 * (np.cos(theta[val]) + np.sin(theta[val])) * E * I2 - ( - np.sin(theta[val]) + np.cos(theta[val])) * thetadd[val] * m5 * l5**3 )/l5**3, 0],
+        [0, 0, 0, 0, 0, (-3 * (np.cos(theta[val]) + np.sin(theta[val])) * E * I2 - ( - np.sin(theta[val]) + np.cos(theta[val])) * thetadd[val] * m5 * l6**3 )/l6**3],
+    ]
+)
 
 # ── Animation ────────────────────────────────────────────────────────────────
 import matplotlib.pyplot as plt
