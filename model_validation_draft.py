@@ -1,12 +1,26 @@
 from pathlib import Path
+import sys
 
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
 from scipy.linalg import eig
-from scipy.optimize import minimize, least_squares
+from scipy.optimize import least_squares
 
-import scivis
+try: import scivis
+except: pass
+try: import numpyTolatex
+except: pass
+
+# %% User settings
+show_plots = True
+save_fig = True
+
+# Plot settings
+exp_fld = Path(__file__).parent / "plots" / "validation"
+colors = ["#0D0887", "#CB4679", "#FFB300"]
+profile = "partsize"
+plot_scale = .62
 
 # %% Model Parameters
 l1 = 0.193
@@ -40,6 +54,7 @@ k3 = 2 * (12 * E * I1) / l3**3
 k4 = 2 * (12 * E * I1) / l4**3
 k5 = (3 * E * I2) / l5**3
 k6 = (3 * E * I2) / l6**3
+
 N_DOF = 6
 
 # %% Calculate modal parameters of the mathematical model
@@ -91,12 +106,34 @@ def modal_analysis(M, K):
 
     return eigfreqs[::2], modeshapes
 
-M, K = system_matrices(m=[m1, m2, m3, m4, m5, m6], k=[k1, k2, k3, k4, k5, k6])
+def fit_damping(xi, eifreqs):
+    b = np.asarray(xi).reshape((-1, 1))
+
+    A_alpha = 1/(2*eifreqs * (2 * np.pi)).reshape((-1, 1))
+    A_beta = (eifreqs * (2 * np.pi) / 2).reshape((-1, 1))
+    A_rayleigh = np.hstack([A_alpha, A_beta])
+
+    sol_damping, *_ = np.linalg.lstsq(A_rayleigh, b)
+    alpha, beta = sol_damping.flatten()
+
+    return alpha, beta
+
+m = [m1, m2, m3, m4, m5, m6]
+k = [k1, k2, k3, k4, k5, k6]
+
+M, K = system_matrices(m=m, k=k)
 eigfreqs, modeshapes = modal_analysis(M, K)
+
+alpha, beta = fit_damping(xi=[0.003]*N_DOF, eifreqs=eigfreqs)
+D = alpha*M + beta*K
+xi = alpha / (2*eigfreqs * 2*np.pi) + beta * (eigfreqs * 2*np.pi) / 2
 
 # %% Compare modal parameters to experimental values
 
-eigfreqs_exp = np.array([1.2849, 1.812, 2.264, 4.473, 6.744, 8.591])
+res_exp = pd.read_csv(Path(__file__).parent / "EMA_global_comparison_summary.csv")
+eigfreqs_exp = res_exp["fn_freq_Hz"].values
+xi_exp_steady = res_exp["zeta_ls_ref_acc"].values
+xi_exp_transient = res_exp["zeta_time_logdec"].values
 
 # %% Adjust model parameters with least squares fit to the eigenfrequencies
 def state_func(x):
@@ -126,4 +163,107 @@ k_adjusted = res.x[6:]
 M_adjusted, K_adjusted = system_matrices(m=m_adjusted, k=k_adjusted)
 eigfreqs_adjusted, modeshapes_adjusted = modal_analysis(M_adjusted, K_adjusted)
 
-domega_adjusted = eigfreqs_exp - eigfreqs_adjusted
+domega_adjusted = eigfreqs_adjusted - eigfreqs_exp
+domega_adjusted_rel = domega_adjusted / eigfreqs_exp
+
+
+# Prepare tables for report
+if "numpyTolatex" in sys.modules:
+
+    eigfreq_table = np.vstack([eigfreqs_exp,
+                               eigfreqs,
+                               eigfreqs_adjusted,
+                               domega_adjusted_rel*100]).T
+    eigfreq_table_latex = numpyTolatex.np2latex(
+        eigfreq_table,
+        row_labels=[fr"$\omega_{i+1}$" for i in range(N_DOF)],
+        body_only=True)
+
+    print("Eigenfrequency comparison:")
+    print(eigfreq_table_latex)
+    print()
+
+    param_table = np.vstack([m, m_adjusted, m_adjusted - m,
+                             k, k_adjusted, k_adjusted - k]).T
+    param_table_latex = numpyTolatex.np2latex(
+        param_table,
+        row_labels=[fr"${i+1}$" for i in range(N_DOF)],
+        body_only=True)
+
+    print("Parameter comparison:")
+    print(param_table_latex)
+    print()
+
+
+# %% Calculate damping parameters for proportional damping
+xi_fit = xi_exp_transient  # Damping ratios to use for fitting damping parameters
+
+alpha_adjusted, beta_adjusted = fit_damping(xi=xi_exp_transient,
+                                            eifreqs=eigfreqs_adjusted)
+xi_adjusted = alpha_adjusted / (2*eigfreqs_adjusted * 2*np.pi) \
+    + beta_adjusted * (eigfreqs_adjusted * 2*np.pi) / 2
+
+# Prepare tables for report
+if "numpyTolatex" in sys.modules:
+
+    xi_table = np.vstack([xi_exp_steady, xi_exp_transient, xi, xi_adjusted,
+                          (xi_adjusted-xi_fit)/xi_fit*100]).T
+    xi_table_latex = numpyTolatex.np2latex(
+        xi_table,
+        row_labels=[fr"${i+1}$" for i in range(N_DOF)],
+        float_format=["%.5f"]*4 + ["%.2f"],
+        body_only=True)
+
+    print("Damping ratio comparison:")
+    print(xi_table_latex)
+    print()
+
+D_adjusted = alpha_adjusted*M_adjusted + beta_adjusted*K_adjusted
+if show_plots and "scivis" in sys.modules:
+    eigfreqs_plot = np.linspace(0, np.ceil(np.max(eigfreqs)/10)*10, 300)
+    eigfreqs_plot[0] = 1e-2
+    omega_plot = eigfreqs_plot * 2*np.pi
+
+    xi = alpha / (2*omega_plot) + beta * omega_plot / 2
+    xi_adjusted =  alpha_adjusted / (2*omega_plot) \
+        + beta_adjusted * omega_plot / 2
+
+    rcparams = scivis.rcparams._prepare_rcparams(profile=profile,
+                                                 scale=plot_scale)
+    rcparams["legend.fontsize"] = rcparams["legend.fontsize"]*1.05
+
+    with mpl.rc_context(rcparams):
+        fig, ax = scivis.subplots(figsize=(20, 8))
+
+        ylims_upper = np.ceil(np.max(xi_fit)/.001)*.001
+        fig, ax, _ = scivis.plot_line(ax=ax,
+                                      x=eigfreqs_plot,
+                                      y=np.stack([xi, xi_adjusted], axis=0),
+                                      plt_labels=[r"$\xi_\text{unadjusted}$",
+                                                  r"$\xi_\text{adjusted}$"],
+                                      ax_lims=[None, [0, ylims_upper]],
+                                      ax_labels=[r"\omega", r"\xi"],
+                                      linestyles = "-", linewidths=1.5,
+                                      colors=colors[:2],
+                                      show_legend=False,
+                                      override_axes_settings=True,
+                                      profile=profile, scale=plot_scale*1.08)
+        ax.scatter(eigfreqs_exp, xi_fit, marker="x", s=150, zorder=4,
+                   label=r"$\xi_\text{experimental}$")
+
+        ax.legend(loc="upper left", bbox_to_anchor=(1, 1),
+                  fontsize=rcparams["legend.fontsize"])
+
+        for i, f in enumerate(eigfreqs_exp):
+            vline, text, _ = scivis.axvline(
+                ax=ax, x=f, text=r"$\omega_" + f"{i+1}" + r"$", c="0.5",
+                rel_pos_x="center", rel_pos_y="top outside", margin_alpha=1)
+            text.set_size(rcparams["legend.fontsize"]*1.05)  # Increase font size of annotation
+            vline.set_zorder(1)  # Put lines in the background
+        ax.axhline(0.003, ls="-.", c=".2", lw=2, zorder=1)
+
+        mpl.pyplot.show()
+
+        if save_fig:
+            exp_fld.mkdir(exist_ok=True)
+            fig.savefig(exp_fld / "proportional_damping_adjusted.svg")
