@@ -13,10 +13,10 @@ except: pass
 
 # %% User settings
 show_plots = True
-save_fig = False
+save_fig = True
 
 # Plot settings
-exp_fld = Path(__file__).parent / "plots"
+exp_fld = Path(__file__).parent / "plots" / "modal_analysis"
 colors = ["#0D0887", "#CB4679", "#FFB300"]
 profile = "partsize"
 plot_scale = .62
@@ -206,7 +206,7 @@ if show_plots:
             linestyles = ["-"]*3 + ["--", "-."], linewidths=1.5,
             colors=colors + [colors[-1]]*2,
             show_legend=False,
-            override_axes_settings=True, profile=profile, scale=plot_scale
+            override_axes_settings=True, profile=profile, scale=plot_scale*1.08
             )
         ax.legend(loc="upper left", bbox_to_anchor=(1, 1),
                   fontsize=rcparams["legend.fontsize"])
@@ -215,7 +215,7 @@ if show_plots:
             vline, text, _ = scivis.axvline(
                 ax=ax, x=f, text=r"$\omega_" + f"{i+1}" + r"$", c="0.5",
                 rel_pos_x="center", rel_pos_y="top outside")
-            text.set_size(rcparams["legend.fontsize"])  # Increase font size of annotation
+            text.set_size(rcparams["legend.fontsize"]*1.05)  # Increase font size of annotation
             vline.set_zorder(1)  # Put lines in the background
         ax.axhline(xi, ls="-.", c=".2", lw=2, zorder=1)
 
@@ -223,7 +223,7 @@ if show_plots:
 
         if save_fig:
             exp_fld.mkdir(exist_ok=True)
-            fig.savefig(exp_fld / "proportional_damping_lstsq.pdf")
+            fig.savefig(exp_fld / "proportional_damping_lstsq.svg")
 
     # Compare results for fit with only first eigenmode
     alpha_D1_first = xi*2*np.abs(eigval_lin0)[0]
@@ -244,7 +244,7 @@ if show_plots:
             linestyles = ["-", "--"]*2, linewidths=1.5,
             colors=[colors[0]]*2 + [colors[1]]*2,
             show_legend=False,
-            override_axes_settings=True, profile=profile, scale=plot_scale
+            override_axes_settings=True, profile=profile, scale=plot_scale*1.08
             )
         ax.legend(loc="upper left", bbox_to_anchor=(1, 1),
                   fontsize=rcparams["legend.fontsize"])
@@ -253,7 +253,7 @@ if show_plots:
             vline, text, _ = scivis.axvline(
                 ax=ax, x=f, text=r"$\omega_" + f"{i+1}" + r"$", c="0.5",
                 rel_pos_x="center", rel_pos_y="top outside")
-            text.set_size(rcparams["legend.fontsize"])  # Increase font size of annotation
+            text.set_size(rcparams["legend.fontsize"]*1.05)  # Increase font size of annotation
             vline.set_zorder(1)  # Put lines in the background
         ax.axhline(xi, ls="-.", c=".2", lw=2, zorder=1)
 
@@ -261,7 +261,7 @@ if show_plots:
 
         if save_fig:
             exp_fld.mkdir(exist_ok=True)
-            fig.savefig(exp_fld / "proportional_damping_first.pdf")
+            fig.savefig(exp_fld / "proportional_damping_first.svg")
 
 # %% Calculate damped eigenvalues and eigenvectors
 
@@ -322,7 +322,7 @@ if show_plots:
             linestyles = ["-"] + ["--"]*2, linewidths=1.5,
             colors=colors[0],
             show_legend=False,
-            override_axes_settings=True, profile=profile, scale=plot_scale
+            override_axes_settings=True, profile=profile, scale=plot_scale*1.08
             )
         ax.legend(loc="upper left", bbox_to_anchor=(1, 1),
                   fontsize=rcparams["legend.fontsize"])
@@ -331,7 +331,7 @@ if show_plots:
             vline, text, _ = scivis.axvline(
                 ax=ax, x=f, text=r"$\omega_" + f"{i+1}" + r"$", c="0.5",
                 rel_pos_x="center", rel_pos_y="top outside")
-            text.set_size(rcparams["legend.fontsize"])  # Increase font size of annotation
+            text.set_size(rcparams["legend.fontsize"]*1.05)  # Increase font size of annotation
             vline.set_zorder(1)  # Put lines in the background
         ax.axhline(xi, ls="-.", c=".2", lw=2, zorder=1)
 
@@ -339,7 +339,7 @@ if show_plots:
 
         if save_fig:
             exp_fld.mkdir(exist_ok=True)
-            fig.savefig(exp_fld / "proportional_damping_final.pdf")
+            fig.savefig(exp_fld / "proportional_damping_final.svg")
 
 # %% Visualize the modeshapes
 def visualize_mode(modeshape):
