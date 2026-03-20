@@ -180,14 +180,14 @@ for mode_idx, peak_idx in enumerate(top6_peaks):
     fit_idx = np.arange(start_idx, stop_idx)
 
     omega_fit = 2 * np.pi * F_p[fit_idx]
-    peak_shape = H1[:, peak_idx].imag.copy()
+    peak_shape = H2[:, peak_idx].imag.copy()
     ref_sign = np.sign(peak_shape[np.argmax(np.abs(peak_shape))])
     if ref_sign == 0:
         ref_sign = 1.0
     mode_shapes[:, mode_idx] = peak_shape / np.max(np.abs(peak_shape)) * ref_sign
 
     for acc_idx in range(N_ACC):
-        frf_fit = H1[acc_idx, fit_idx]
+        frf_fit = H2[acc_idx, fit_idx]
         valid = np.abs(frf_fit) > 1e-12
 
         if np.count_nonzero(valid) < 3:
@@ -214,14 +214,14 @@ for mode_idx, peak_idx in enumerate(top6_peaks):
 
 print("\n" + "=" * 86)
 print(
-    "  PHASE 2 (Least Square Method)  – MODAL PARAMETERS FROM H1 (PER ACCELEROMETER / MODE)"
+    "  PHASE 2 (Least Square Method)  – MODAL PARAMETERS FROM H2 (PER ACCELEROMETER / MODE)"
 )
 print("=" * 86)
 
 phase2_lines = []
 phase2_lines.append("=" * 86)
 phase2_lines.append(
-    "  PHASE 2 (Least Square Method) - MODAL PARAMETERS FROM H1 (PER ACCELEROMETER / MODE)"
+    "  PHASE 2 (Least Square Method) - MODAL PARAMETERS FROM H2 (PER ACCELEROMETER / MODE)"
 )
 phase2_lines.append("=" * 86)
 
@@ -267,7 +267,7 @@ for mode_idx, peak_idx in enumerate(top6_peaks):
     omega_n = 2 * np.pi * F_p[peak_idx]
 
     for acc_idx in range(N_ACC):
-        frf_mag = np.abs(H1[acc_idx, freq_idx])
+        frf_mag = np.abs(H2[acc_idx, freq_idx])
         peak_amp = frf_mag[peak_idx]
 
         if peak_amp <= 0:
@@ -292,14 +292,14 @@ for mode_idx, peak_idx in enumerate(top6_peaks):
 
 print("\n" + "=" * 86)
 print(
-    "  PHASE 2 (Half Power Point)  – MODAL PARAMETERS FROM H1 (PER ACCELEROMETER / MODE)"
+    "  PHASE 2 (Half Power Point)  – MODAL PARAMETERS FROM H2 (PER ACCELEROMETER / MODE)"
 )
 print("=" * 86)
 
 phase2_lines = []
 phase2_lines.append("=" * 86)
 phase2_lines.append(
-    "  PHASE 2 (Half Power Point) - MODAL PARAMETERS FROM H1 (PER ACCELEROMETER / MODE)"
+    "  PHASE 2 (Half Power Point) - MODAL PARAMETERS FROM H2 (PER ACCELEROMETER / MODE)"
 )
 phase2_lines.append("=" * 86)
 

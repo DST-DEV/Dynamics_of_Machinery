@@ -197,14 +197,17 @@ def log_decrement(t, y, config):
     decay_peaks = peaks[i0:]
     decay_amps = y[decay_peaks]
 
-    n_points = config.get("n_decrement_points", None)
-    if n_points is not None:
-        n_points = max(2, int(n_points))
-        decay_peaks = decay_peaks[:n_points]
-        decay_amps = decay_amps[:n_points]
+    threshold = 0.2 * decay_amps[0]
 
-    if len(decay_peaks) < 2:
-        return np.nan, np.nan
+    # 2. Find peaks that are still above this threshold
+    valid_mask = decay_amps >= threshold
+    decay_peaks = decay_peaks[valid_mask]
+    decay_amps = decay_amps[valid_mask]
+
+    # 3. Proceed with log-dec calculation using the adapted N
+    n_total = len(decay_amps)
+    if n_total < 2:
+        return np.nan, np.nan, np.nan, np.array([], dtype=int)
 
     deltas = [
         (1.0 / n) * np.log(decay_amps[0] / decay_amps[n])
@@ -235,37 +238,31 @@ def time_domain_modes(fs=500):
             "min_dist": 4,
             "prominence": None,
             "start_peak_number": None,
-            "n_decrement_points": 10,
         },
         {
             "min_dist": 1,
             "prominence": 0.3,
             "start_peak_number": None,
-            "n_decrement_points": 10,
         },
         {
             "min_dist": 4,
             "prominence": None,
             "start_peak_number": None,
-            "n_decrement_points": 10,
         },
         {
             "min_dist": 4,
             "prominence": 0.6,
             "start_peak_number": 7,
-            "n_decrement_points": 10,
         },
         {
             "min_dist": 1,
             "prominence": None,
             "start_peak_number": 13,
-            "n_decrement_points": 10,
         },
         {
             "min_dist": 1,
             "prominence": None,
             "start_peak_number": 16,
-            "n_decrement_points": 10,
         },
     ]
 
