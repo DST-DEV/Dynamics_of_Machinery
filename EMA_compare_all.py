@@ -284,7 +284,9 @@ def time_domain_modes(fs=500):
     return np.array(fn_list), np.array(xi_list)
 
 
-def parse_modal_mass_stiffness_damping(file_path="EMA_modal_mass_stiffness_damping.txt"):
+def parse_modal_mass_stiffness_damping(
+    file_path="EMA_modal_mass_stiffness_damping.txt",
+):
     """Parse LS modal table into per-mode arrays for m, k, d and zeta."""
     mode_data = {
         mode: {"m": [], "k": [], "d": [], "zeta": []} for mode in range(1, N_MODES + 1)
@@ -421,7 +423,9 @@ def main():
             k_val = ls_data[mode]["k"][acc] if acc < len(ls_data[mode]["k"]) else np.nan
             d_val = ls_data[mode]["d"][acc] if acc < len(ls_data[mode]["d"]) else np.nan
             z_ls = (
-                ls_data[mode]["zeta"][acc] if acc < len(ls_data[mode]["zeta"]) else np.nan
+                ls_data[mode]["zeta"][acc]
+                if acc < len(ls_data[mode]["zeta"])
+                else np.nan
             )
             z_hpp = hpp_data[mode][acc] if acc < len(hpp_data[mode]) else np.nan
 
