@@ -148,10 +148,10 @@ def state_func(x):
 
     return domega
 
-lbounds = np.array([vi*0.95 for vi in [m1, m2, m3, m4, m5, m6,
-                                       k1, k2, k3, k4, k5, k6]])
-ubounds = np.array([vi*1.05 for vi in [m1, m2, m3, m4, m5, m6,
-                                       k1, k2, k3, k4, k5, k6]])
+lbounds = np.hstack([[mi*0.95 for mi in [m1, m2, m3, m4, m5, m6]],
+                     [ki*0.85 for ki in [k1, k2, k3, k4, k5, k6]]])
+ubounds = np.hstack([[mi*1.05 for mi in [m1, m2, m3, m4, m5, m6]],
+                     [ki*1.15 for ki in [k1, k2, k3, k4, k5, k6]]])
 
 res = least_squares(fun=state_func,
                     x0=[m1, m2, m3, m4, m5, m6, k1, k2, k3, k4, k5, k6],
