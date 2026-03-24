@@ -1,0 +1,89 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{geometry}
+\geometry{margin=2cm}
+
+\title{\textbf{Rayleigh Damping Matrix Calculation}}
+\author{Question 7 - FRF Comparison}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{System Parameters}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cccc}
+\toprule
+\textbf{Mass} & \textbf{Value [kg]} & \textbf{Stiffness} & \textbf{Value [N/m]} \\
+\midrule
+$m_1$ & 2.6262 & $k_1$ & 4956.62 \\
+$m_2$ & 1.64985 & $k_2$ & 1431.23 \\
+$m_3$ & 1.97048 & $k_3$ & 1279.54 \\
+$m_4$ & 2.322 & $k_4$ & 895.202 \\
+$m_5$ & 0.6579 & $k_5$ & 83.6853 \\
+$m_6$ & 0.6579 & $k_6$ & 83.6853 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Experimental Damping Data}
+
+\textbf{Natural frequencies} $f_i$ and \textbf{damping ratios} $\zeta_i$ from EMA (file: \texttt{EMA\_global\_comparison\_summary.csv}):
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccc}
+\toprule
+\textbf{Mode} & \textbf{Method} & \textbf{Damping Ratio} $\zeta_i$ \\
+\midrule
+1, 2, 3 & logdec (time domain) & $\zeta_1, \zeta_2, \zeta_3$ \\
+4, 5, 6 & ls (frequency domain) & $\zeta_4, \zeta_5, \zeta_6$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Rayleigh Damping Formulas}
+
+\textbf{Damping matrix:}
+\begin{equation}
+\boxed{\mathbf{D} = \alpha \mathbf{M} + \beta \mathbf{K}}
+\end{equation}
+
+\textbf{Modal damping relation:}
+\begin{equation}
+\boxed{\zeta_i = \frac{\alpha}{2\omega_i} + \frac{\beta \omega_i}{2}} \quad \text{where } \omega_i = 2\pi f_i
+\end{equation}
+
+\textbf{Least squares fitting:}
+\begin{equation}
+\begin{bmatrix}
+\zeta_1 \\ \vdots \\ \zeta_6
+\end{bmatrix}
+=
+\begin{bmatrix}
+\frac{1}{2\omega_1} & \frac{\omega_1}{2} \\
+\vdots & \vdots \\
+\frac{1}{2\omega_6} & \frac{\omega_6}{2}
+\end{bmatrix}
+\begin{bmatrix}
+\alpha \\ \beta
+\end{bmatrix}
+\quad \Rightarrow \quad
+\boxed{\begin{bmatrix}
+\alpha \\ \beta
+\end{bmatrix} = (\mathbf{A}^T\mathbf{A})^{-1} \mathbf{A}^T \mathbf{b}}
+\end{equation}
+
+\textbf{FRF equation:}
+\begin{equation}
+\left[-\omega^2 \mathbf{M} + j\omega\mathbf{D} + \mathbf{K}\right] \mathbf{X}(\omega) = \mathbf{F}(\omega)
+\end{equation}
+
+\section{Mode 2 Excitation}
+
+Mode 2 does not exhibit a visible peak in the digital twin FRFs because its mode shape has near-zero amplitude at Mass 1, where the excitation force is applied. The modal participation factor, defined as $\phi_2^T \cdot \mathbf{F}$, quantifies how effectively a given force distribution excites a particular mode. For Mode 2 with the mode shape $\phi_2 \approx [0, 0, 0, 0, +1, -1]^T$ and force vector $\mathbf{F} = [1, 0, 0, 0, 0, 0]^T$ applied at Mass 1, the participation factor becomes $(0 \times 1 + 0 \times 0 + \cdots) = 0$. Consequently, Mode 2 is not excited by the input force, resulting in no resonance peak at the corresponding natural frequency in the theoretical FRFs.
+
+\end{document}

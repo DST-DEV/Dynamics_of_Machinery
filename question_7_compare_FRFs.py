@@ -36,12 +36,12 @@ l6 = 0.430
 # m4 = 2.732
 # m5 = 0.774
 # m6 = 0.774
-m1 = 2.6262
-m2 = 1.64985
-m3 = 1.97048
-m4 = 2.322
-m5 = 0.6579
-m6 = 0.6579
+m1 = 2.18
+m2 = 1.84
+m3 = 1.85
+m4 = 2.60
+m5 = 0.74
+m6 = 0.74
 g = 9.81
 mbeam1 = 0.3
 mbeam2 = 0.421
@@ -61,12 +61,12 @@ I2 = (b2 * h2**3) / 12
 # k4 = 2 * (12 * E * I1) / l4**3
 # k5 = (3 * E * I2) / l5**3
 # k6 = (3 * E * I2) / l6**3
-k1 = 4956.62
-k2 = 1431.23
-k3 = 1279.54
-k4 = 895.202
-k5 = 83.6853
-k6 = 83.6853
+k1 = 4156.66
+k2 = 1306.74
+k3 = 1399.14
+k4 = 817.25
+k5 = 78.00
+k6 = 78.00
 N_DOF = 6
 
 # Mass matrix
@@ -145,29 +145,20 @@ eigfreqs_exp = res_exp["fn_freq_Hz"].values
 xi_exp_ls = res_exp["zeta_ls_ref_acc"].values
 xi_exp_logdec = res_exp["zeta_time_logdec"].values
 
-# Use mixed damping method (same as question_7.py)
-DAMPING_METHOD = "mixed"
-PER_MODE_DAMPING_METHODS = ["logdec", "logdec", "logdec", "ls", "ls", "ls"]
+# Use custom damping methods
+DAMPING_METHOD = "custom"
 FREQUENCY_SOURCE = "experimental"
 
-xi_chosen = np.zeros(N_DOF)
-method_names = []
-for i, method in enumerate(PER_MODE_DAMPING_METHODS):
-    if method == "ls":
-        xi_chosen[i] = xi_exp_ls[i]
-        method_names.append("ls")
-    elif method == "logdec":
-        xi_chosen[i] = xi_exp_logdec[i]
-        method_names.append("logdec")
+xi_chosen = np.array([0.00553, 0.00419, 0.00353, 0.00292, 0.00334, 0.00379])
 
 eigfreqs_fit = eigfreqs_exp if FREQUENCY_SOURCE == "experimental" else eigfreqs_model
 
 print("\n" + "=" * 70)
 print("  DAMPING RATIOS USED FOR RAYLEIGH DAMPING MATRIX")
 print("=" * 70)
-print(f"Using mixed damping methods per mode:")
+print(f"Using custom damping methods per mode:")
 for i in range(N_DOF):
-    print(f"  Mode {i+1}: {method_names[i]:8s} -> zeta = {xi_chosen[i]:.6f}")
+    print(f"  Mode {i+1}: custom   -> zeta = {xi_chosen[i]:.6f}")
 print(f"\nFrequency source: {FREQUENCY_SOURCE}")
 
 # Fit Rayleigh damping parameters
@@ -294,52 +285,63 @@ print("Experimental FRF data loaded.")
 colors = ["tab:blue", "tab:red", "tab:green", "tab:orange", "tab:purple", "tab:brown"]
 mass_labels = [f"Mass {i+1}" for i in range(N_DOF)]
 
-# Create figure with 6 subplots (one for each DOF)
-fig, axes = plt.subplots(3, 2, figsize=(16, 12))
-axes = axes.flatten()
+# Create 3 figures, each with 2 subplots (one for each pair of DOFs)
+figs_frf = []
+for pair_idx in range(3):
+    fig_pair, axes_pair = plt.subplots(1, 2, figsize=(16, 4))
+    figs_frf.append(fig_pair)
 
-for i in range(N_DOF):
-    ax = axes[i]
+    for j in range(2):
+        i = pair_idx * 2 + j
+        ax = axes_pair[j]
 
-    # Plot experimental FRF (H2)
-    ax.semilogy(
-        F_exp,
-        np.abs(H_experimental[i, freq_idx]),
-        color=colors[i],
-        linewidth=1.5,
-        label="Experimental (H2)",
-        alpha=0.7,
-    )
+        # Plot experimental FRF (H2)
+        ax.semilogy(
+            F_exp,
+            np.abs(H_experimental[i, freq_idx]),
+            color=colors[i],
+            linewidth=1.5,
+            label="Experimental (H2)",
+            alpha=0.7,
+        )
 
-    # Plot theoretical FRF
-    ax.semilogy(
-        freq_hz,
-        np.abs(H_theoretical[i, :]),
-        "k--",
-        linewidth=1.2,
-        label="Theoretical",
-        alpha=0.8,
-    )
+        # Plot theoretical FRF
+        ax.semilogy(
+            freq_hz,
+            np.abs(H_theoretical[i, :]),
+            "k--",
+            linewidth=1.2,
+            label="Theoretical",
+            alpha=0.8,
+        )
 
-    ax.set_xlim([0.5, 10])
-    ax.grid(True, which="both", alpha=0.3)
-    ax.set_xlabel("Frequency [Hz]", fontsize=16)
-    ax.set_ylabel("|H| [m/s²/N]", fontsize=16)
-    ax.set_title(f"{mass_labels[i]}", fontsize=18, fontweight="bold")
-    ax.legend(fontsize=12, loc="best")
+        ax.set_xlim([0.5, 10])
+        ax.grid(True, which="both", alpha=0.3)
+        ax.set_xlabel("Frequency [Hz]", fontsize=16)
+        ax.set_ylabel("|H| [m/s²/N]", fontsize=16)
+        ax.set_title(f"{mass_labels[i]}", fontsize=18, fontweight="bold")
+        ax.legend(fontsize=12, loc="best")
 
-    # Increase tick label size
-    ax.tick_params(axis='both', which='major', labelsize=14)
+        # Increase tick label size
+        ax.tick_params(axis="both", which="major", labelsize=14)
 
-    # Add vertical lines at theoretical natural frequencies with frequency labels
-    for fn in eigfreqs_model:
-        ax.axvline(fn, color="gray", linestyle=":", linewidth=0.7, alpha=0.5)
-        # Add frequency label below the line
-        ax.text(fn, ax.get_ylim()[0] * 1.5, f'{fn:.1f} Hz',
-                rotation=90, verticalalignment='bottom', horizontalalignment='right',
-                color='gray', fontsize=12, alpha=0.8)
+        # Add vertical lines at theoretical natural frequencies with frequency labels
+        for fn in eigfreqs_model:
+            ax.axvline(fn, color="gray", linestyle=":", linewidth=0.7, alpha=0.5)
+            # Add frequency label below the line
+            ax.text(
+                fn,
+                ax.get_ylim()[0] * 1.5,
+                f"{fn:.1f} Hz",
+                rotation=90,
+                verticalalignment="bottom",
+                horizontalalignment="right",
+                color="gray",
+                fontsize=12,
+                alpha=0.8,
+            )
 
-fig.tight_layout()
+    fig_pair.tight_layout()
 
 # ═══════════════════════════════════════════════════════
 # PART 4: OVERLAY PLOT - ALL 6 DOFs ON ONE FIGURE
@@ -362,7 +364,7 @@ ax1.set_xlim([0.5, 10])
 ax1.grid(True, which="both", alpha=0.3)
 ax1.set_ylabel("|H| [m/s²/N]", fontsize=18)
 ax1.legend(fontsize=13, ncol=3, loc="upper right")
-ax1.tick_params(axis='both', which='major', labelsize=15)
+ax1.tick_params(axis="both", which="major", labelsize=15)
 
 # Set x-axis major ticks to 0.1 Hz
 ax1.xaxis.set_major_locator(MultipleLocator(0.5))
@@ -388,7 +390,7 @@ ax2.grid(True, which="both", alpha=0.3)
 ax2.set_xlabel("Frequency [Hz]", fontsize=18)
 ax2.set_ylabel("|H| [m/s²/N]", fontsize=18)
 ax2.legend(fontsize=13, ncol=3, loc="upper right")
-ax2.tick_params(axis='both', which='major', labelsize=15)
+ax2.tick_params(axis="both", which="major", labelsize=15)
 
 # Set x-axis major ticks to 0.1 Hz
 ax2.xaxis.set_major_locator(MultipleLocator(0.5))
@@ -398,9 +400,17 @@ ax2.xaxis.set_minor_locator(MultipleLocator(0.1))
 for fn in eigfreqs_model:
     ax2.axvline(fn, color="blue", linestyle=":", linewidth=0.8, alpha=0.6)
     # Add frequency label below the blue line
-    ax2.text(fn, ax2.get_ylim()[0] * 1.5, f'{fn:.1f} Hz',
-             rotation=90, verticalalignment='bottom', horizontalalignment='right',
-             color='blue', fontsize=13, alpha=0.8)
+    ax2.text(
+        fn,
+        ax2.get_ylim()[0] * 1.5,
+        f"{fn:.1f} Hz",
+        rotation=90,
+        verticalalignment="bottom",
+        horizontalalignment="right",
+        color="blue",
+        fontsize=13,
+        alpha=0.8,
+    )
 
 fig2.tight_layout()
 
@@ -538,20 +548,20 @@ for mode_idx in modes_to_flip:
 # Define physical positions for masses using actual lengths
 # y-coordinate represents vertical height, x=0 is the centerline
 # Calculate cumulative heights based on beam lengths
-h1 = l1                           # Mass 1 at height l1 from floor
-h2 = l1 + l2                      # Mass 2 at height l1 + l2
-h3 = l1 + l2 + l3                 # Mass 3
-h4 = l1 + l2 + l3 + l4            # Mass 4
-h5 = l1 + l2 + l3 + l4 - l5       # Mass 5 hangs BELOW mass 4 by length l5
-h6 = l1 + l2 + l3 + l4 + l6       # Mass 6 extends ABOVE mass 4 by length l6
+h1 = l1  # Mass 1 at height l1 from floor
+h2 = l1 + l2  # Mass 2 at height l1 + l2
+h3 = l1 + l2 + l3  # Mass 3
+h4 = l1 + l2 + l3 + l4  # Mass 4
+h5 = l1 + l2 + l3 + l4 - l5  # Mass 5 hangs BELOW mass 4 by length l5
+h6 = l1 + l2 + l3 + l4 + l6  # Mass 6 extends ABOVE mass 4 by length l6
 
 mass_coords = {
-    1: (0, h1),      # Mass 1
-    2: (0, h2),      # Mass 2
-    3: (0, h3),      # Mass 3
-    4: (0, h4),      # Mass 4 (connection point for 5 and 6)
-    5: (0, h5),      # Mass 5 - below mass 4
-    6: (0, h6),      # Mass 6 - above mass 4
+    1: (0, h1),  # Mass 1
+    2: (0, h2),  # Mass 2
+    3: (0, h3),  # Mass 3
+    4: (0, h4),  # Mass 4 (connection point for 5 and 6)
+    5: (0, h5),  # Mass 5 - below mass 4
+    6: (0, h6),  # Mass 6 - above mass 4
 }
 
 # Define connections (which masses are connected by springs)
@@ -571,7 +581,7 @@ for mode in range(N_DOF):
     ax = axes3[mode]
 
     # Get equilibrium positions for all masses
-    y_coords = [mass_coords[i+1][1] for i in range(N_DOF)]
+    y_coords = [mass_coords[i + 1][1] for i in range(N_DOF)]
 
     # Mode shape amplitude represents horizontal displacement
     x_exp = modeshapes_exp[:, mode]
@@ -579,70 +589,148 @@ for mode in range(N_DOF):
 
     # Draw the floor at y=0
     floor_width = 0.3  # Width of floor representation
-    ax.plot([-floor_width, floor_width], [0, 0], color='black', linewidth=5, solid_capstyle='butt', zorder=1)
+    ax.plot(
+        [-floor_width, floor_width],
+        [0, 0],
+        color="black",
+        linewidth=5,
+        solid_capstyle="butt",
+        zorder=1,
+    )
     # Add hatching to represent ground
-    ax.fill_between([-floor_width, floor_width], 0, -0.05, color='gray', alpha=0.3, hatch='///', edgecolor='black', linewidth=1, zorder=1)
+    ax.fill_between(
+        [-floor_width, floor_width],
+        0,
+        -0.05,
+        color="gray",
+        alpha=0.3,
+        hatch="///",
+        edgecolor="black",
+        linewidth=1,
+        zorder=1,
+    )
 
     # Draw connection from floor to Mass 1 (undeformed structure)
-    ax.plot([0, 0], [0, mass_coords[1][1]], color='lightgray', linewidth=3, alpha=0.5, zorder=1)
+    ax.plot(
+        [0, 0],
+        [0, mass_coords[1][1]],
+        color="lightgray",
+        linewidth=3,
+        alpha=0.5,
+        zorder=1,
+    )
 
     # Draw the undeformed structure (equilibrium position) for the rest
     for conn in connections:
         m1, m2 = conn
         y1, y2 = mass_coords[m1][1], mass_coords[m2][1]
-        ax.plot([0, 0], [y1, y2], color='lightgray', linewidth=3, alpha=0.5, zorder=1)
+        ax.plot([0, 0], [y1, y2], color="lightgray", linewidth=3, alpha=0.5, zorder=1)
 
     # Draw vertical reference line
-    ax.axvline(0, color='k', linestyle='--', linewidth=0.5, alpha=0.3)
+    ax.axvline(0, color="k", linestyle="--", linewidth=0.5, alpha=0.3)
 
     # Draw connection from floor to Mass 1 (deformed - experimental)
-    ax.plot([0, x_exp[0]], [0, y_coords[0]], color=colors[mode], linewidth=2, alpha=0.6, linestyle='-', zorder=2)
+    ax.plot(
+        [0, x_exp[0]],
+        [0, y_coords[0]],
+        color=colors[mode],
+        linewidth=2,
+        alpha=0.6,
+        linestyle="-",
+        zorder=2,
+    )
 
     # Draw connection from floor to Mass 1 (deformed - theoretical)
-    ax.plot([0, x_theo[0]], [0, y_coords[0]], color='black', linewidth=2, alpha=0.7, linestyle=':', zorder=2)
+    ax.plot(
+        [0, x_theo[0]],
+        [0, y_coords[0]],
+        color="black",
+        linewidth=2,
+        alpha=0.7,
+        linestyle=":",
+        zorder=2,
+    )
 
     # Draw deformed structure for experimental (solid lines)
     for conn in connections:
         m1, m2 = conn
         idx1, idx2 = m1 - 1, m2 - 1
-        ax.plot([x_exp[idx1], x_exp[idx2]], [y_coords[idx1], y_coords[idx2]],
-                color=colors[mode], linewidth=2, alpha=0.6, linestyle='-', zorder=2)
+        ax.plot(
+            [x_exp[idx1], x_exp[idx2]],
+            [y_coords[idx1], y_coords[idx2]],
+            color=colors[mode],
+            linewidth=2,
+            alpha=0.6,
+            linestyle="-",
+            zorder=2,
+        )
 
     # Draw deformed structure for theoretical (dotted lines)
     for conn in connections:
         m1, m2 = conn
         idx1, idx2 = m1 - 1, m2 - 1
-        ax.plot([x_theo[idx1], x_theo[idx2]], [y_coords[idx1], y_coords[idx2]],
-                color='black', linewidth=2, alpha=0.7, linestyle=':', zorder=2)
+        ax.plot(
+            [x_theo[idx1], x_theo[idx2]],
+            [y_coords[idx1], y_coords[idx2]],
+            color="black",
+            linewidth=2,
+            alpha=0.7,
+            linestyle=":",
+            zorder=2,
+        )
 
     # Draw blue lines connecting experimental to digital twin for each mass (shows difference)
     for i in range(N_DOF):
-        ax.plot([x_exp[i], x_theo[i]], [y_coords[i], y_coords[i]],
-                color='blue', linewidth=1.5, alpha=0.6, zorder=2)
+        ax.plot(
+            [x_exp[i], x_theo[i]],
+            [y_coords[i], y_coords[i]],
+            color="blue",
+            linewidth=1.5,
+            alpha=0.6,
+            zorder=2,
+        )
 
     # Plot experimental mode shape (filled circles)
-    ax.scatter(x_exp, y_coords, s=200, marker='o',
-               color=colors[mode], edgecolor='k', linewidth=2, alpha=0.7,
-               label='Experimental', zorder=3)
+    ax.scatter(
+        x_exp,
+        y_coords,
+        s=200,
+        marker="o",
+        color=colors[mode],
+        edgecolor="k",
+        linewidth=2,
+        alpha=0.7,
+        label="Experimental",
+        zorder=3,
+    )
 
     # Plot theoretical mode shape (filled circles with different edge)
-    ax.scatter(x_theo, y_coords, s=200, marker='o',
-               facecolors='white', edgecolor='k', linewidth=2.5, alpha=0.9,
-               label='Digital Twin', zorder=4)
+    ax.scatter(
+        x_theo,
+        y_coords,
+        s=200,
+        marker="o",
+        facecolors="white",
+        edgecolor="k",
+        linewidth=2.5,
+        alpha=0.9,
+        label="Digital Twin",
+        zorder=4,
+    )
 
-    ax.grid(True, alpha=0.3, axis='x')
+    ax.grid(True, alpha=0.3, axis="x")
 
     # Set y-ticks to show mass labels at their heights
     ax.set_yticks(y_coords)
-    ax.set_yticklabels([f'M{i+1}' for i in range(N_DOF)], fontsize=15)
-    ax.tick_params(axis='x', which='major', labelsize=14)
+    ax.set_yticklabels([f"M{i+1}" for i in range(N_DOF)], fontsize=15)
+    ax.tick_params(axis="x", which="major", labelsize=14)
 
-    ax.set_xlabel('Normalized Amplitude (Displacement)', fontsize=16)
-    ax.set_ylabel('Height [m]', fontsize=16)
-    ax.set_title(f'Mode {mode+1}', fontsize=18, fontweight='bold')
+    ax.set_xlabel("Normalized Amplitude (Displacement)", fontsize=16)
+    ax.set_ylabel("Height [m]", fontsize=16)
+    ax.set_title(f"Mode {mode+1}", fontsize=18, fontweight="bold")
     ax.set_xlim([-1.3, 1.3])
     ax.set_ylim([-0.08, 1.5])
-    ax.legend(fontsize=12, loc='upper right', framealpha=0.9)
+    ax.legend(fontsize=12, loc="upper right", framealpha=0.9)
 
 fig3.tight_layout()
 
@@ -655,17 +743,25 @@ figures_dir = Path(__file__).parent / "figures"
 figures_dir.mkdir(exist_ok=True)
 
 # Save both figures
-fig.savefig(figures_dir / "FRF_comparison_individual_subplots.pdf", dpi=300, bbox_inches='tight')
-fig2.savefig(figures_dir / "FRF_comparison_overlay.pdf", dpi=300, bbox_inches='tight')
-fig3.savefig(figures_dir / "mode_shapes_normalized.pdf", dpi=300, bbox_inches='tight')
+for pair_idx, fig_pair in enumerate(figs_frf):
+    m1, m2 = pair_idx * 2 + 1, pair_idx * 2 + 2
+    fig_pair.savefig(
+        figures_dir / f"FRF_comparison_individual_{m1}_{m2}.pdf",
+        dpi=300,
+        bbox_inches="tight",
+    )
+
+fig2.savefig(figures_dir / "FRF_comparison_overlay.pdf", dpi=300, bbox_inches="tight")
+fig3.savefig(figures_dir / "mode_shapes_normalized.pdf", dpi=300, bbox_inches="tight")
 
 print("\n" + "=" * 70)
 print("  FIGURES SAVED")
 print("=" * 70)
 print(f"Figures saved to: {figures_dir}")
-print("  - FRF_comparison_individual_subplots.pdf")
+for pair_idx in range(3):
+    m1, m2 = pair_idx * 2 + 1, pair_idx * 2 + 2
+    print(f"  - FRF_comparison_individual_{m1}_{m2}.pdf")
 print("  - FRF_comparison_overlay.pdf")
 print("  - mode_shapes_normalized.pdf")
 
 plt.show()
-

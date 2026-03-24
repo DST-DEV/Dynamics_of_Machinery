@@ -148,9 +148,9 @@ def state_func(x):
 
     return domega
 
-lbounds = np.array([vi*0.85 for vi in [m1, m2, m3, m4, m5, m6,
+lbounds = np.array([vi*0.95 for vi in [m1, m2, m3, m4, m5, m6,
                                        k1, k2, k3, k4, k5, k6]])
-ubounds = np.array([vi*1.15 for vi in [m1, m2, m3, m4, m5, m6,
+ubounds = np.array([vi*1.05 for vi in [m1, m2, m3, m4, m5, m6,
                                        k1, k2, k3, k4, k5, k6]])
 
 res = least_squares(fun=state_func,
@@ -197,11 +197,20 @@ if "numpyTolatex" in sys.modules:
 
 # %% Calculate damping parameters for proportional damping
 xi_fit = xi_exp_transient  # Damping ratios to use for fitting damping parameters
+idx_fit = [0, 1, 2]  # Indices of damping ratios to consider for fitting the damping parameters
 
-alpha_adjusted, beta_adjusted = fit_damping(xi=xi_exp_transient,
-                                            eifreqs=eigfreqs_adjusted)
+# Fit alpha to new data, keep beta from previous fitting
+b = np.asarray(xi_fit[idx_fit]).reshape((-1, 1))
+A_alpha = 1/(2*eigfreqs_adjusted[idx_fit] * (2 * np.pi)).reshape((-1, 1))
+alpha_adjusted, *_ = np.linalg.lstsq(A_alpha, b)
+
+alpha_adjusted = alpha_adjusted.item()
+beta_adjusted = beta
+
 xi_adjusted = alpha_adjusted / (2*eigfreqs_adjusted * 2*np.pi) \
     + beta_adjusted * (eigfreqs_adjusted * 2*np.pi) / 2
+
+D_adjusted = alpha_adjusted*M_adjusted + beta_adjusted*K_adjusted
 
 # Prepare tables for report
 if "numpyTolatex" in sys.modules:
@@ -218,7 +227,6 @@ if "numpyTolatex" in sys.modules:
     print(xi_table_latex)
     print()
 
-D_adjusted = alpha_adjusted*M_adjusted + beta_adjusted*K_adjusted
 if show_plots and "scivis" in sys.modules:
     eigfreqs_plot = np.linspace(0, np.ceil(np.max(eigfreqs)/10)*10, 300)
     eigfreqs_plot[0] = 1e-2
@@ -228,6 +236,12 @@ if show_plots and "scivis" in sys.modules:
     xi_adjusted =  alpha_adjusted / (2*omega_plot) \
         + beta_adjusted * omega_plot / 2
 
+    # For comparison: fit alpha & beta to all experimental damping ratios
+    alpha_adjusted_all, beta_adjusted_all = \
+        fit_damping(xi=xi_fit, eifreqs=eigfreqs_adjusted)
+    xi_adjusted_all =  alpha_adjusted_all / (2*omega_plot) \
+        + beta_adjusted_all * omega_plot / 2
+
     rcparams = scivis.rcparams._prepare_rcparams(profile=profile,
                                                  scale=plot_scale)
     rcparams["legend.fontsize"] = rcparams["legend.fontsize"]*1.05
@@ -235,20 +249,26 @@ if show_plots and "scivis" in sys.modules:
     with mpl.rc_context(rcparams):
         fig, ax = scivis.subplots(figsize=(20, 8))
 
-        ylims_upper = np.ceil(np.max(xi_fit)/.001)*.001
+        ylims_upper = np.max((np.ceil(np.max(xi_fit[idx_fit])/.001)*.001,
+                              .02))
         fig, ax, _ = scivis.plot_line(ax=ax,
                                       x=eigfreqs_plot,
-                                      y=np.stack([xi, xi_adjusted], axis=0),
+                                      y=np.stack([xi, xi_adjusted,
+                                                  xi_adjusted_all], axis=0),
                                       plt_labels=[r"$\xi_\text{unadjusted}$",
-                                                  r"$\xi_\text{adjusted}$"],
+                                                  r"$\xi_\text{adjusted}$",
+                                                  r"$\xi_\text{adjusted, all}$"],
                                       ax_lims=[None, [0, ylims_upper]],
                                       ax_labels=[r"\omega", r"\xi"],
-                                      linestyles = "-", linewidths=1.5,
-                                      colors=colors[:2],
+                                      ax_units=[r"\text{Hz}", ""],
+                                      linestyles = ["-"]*2 + ["--"],
+                                      linewidths=1.5,
+                                      colors=colors[:2] + [colors[1]],
                                       show_legend=False,
                                       override_axes_settings=True,
                                       profile=profile, scale=plot_scale*1.08)
-        ax.scatter(eigfreqs_exp, xi_fit, marker="x", s=150, zorder=4,
+        ax.scatter(eigfreqs_exp, xi_fit,
+                   marker="x", s=150, zorder=4,
                    label=r"$\xi_\text{experimental}$")
 
         ax.legend(loc="upper left", bbox_to_anchor=(1, 1),

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import scivis
 
 # %% User settings
-T = 20  # Total simulation time
+T = 48  # Total simulation time
 
 plot_lines = True
 # %% Parameters
@@ -16,30 +16,46 @@ l4 = 0.271
 l5 = 0.430
 l6 = 0.430
 
-m1 = 2.294
-m2 = 1.941
-m3 = 1.943
-m4 = 2.732
-m5 = 0.774
-m6 = 0.774
-mbeam1 = 0.3
-mbeam2 = 0.421
-macc = 0.073
+# =============================================================================
+# # Old values (before adjustments)
+# m1 = 2.294
+# m2 = 1.941
+# m3 = 1.943
+# m4 = 2.732
+# m5 = 0.774
+# m6 = 0.774
+# =============================================================================
+m1 = 2.1793
+m2 = 1.84395
+m3 = 1.84585
+m4 = 2.5954
+m5 = 0.7353
+m6 = 0.7353
 g = 9.81
 
-b1 = 0.0291
-h1 = 0.0011
-b2 = 0.0350
-h2 = 0.0015
-E = 2e11
-I1 = (b1 * h1**3) / 12
-I2 = (b2 * h2**3) / 12
-k1 = 4 * (12 * E * I1) / l1**3
-k2 = 4 * (12 * E * I1) / l2**3
-k3 = 2 * (12 * E * I1) / l3**3
-k4 = 2 * (12 * E * I1) / l4**3
-k5 = (3 * E * I2) / l5**3
-k6 = (3 * E * I2) / l6**3
+# =============================================================================
+# # Old values (before adjustments)
+# b1 = 0.0291
+# h1 = 0.0011
+# b2 = 0.0350
+# h2 = 0.0015
+# E = 2e11
+# I1 = (b1 * h1**3) / 12
+# I2 = (b2 * h2**3) / 12
+# k1 = 4 * (12 * E * I1) / l1**3
+# k2 = 4 * (12 * E * I1) / l2**3
+# k3 = 2 * (12 * E * I1) / l3**3
+# k4 = 2 * (12 * E * I1) / l4**3
+# k5 = (3 * E * I2) / l5**3
+# k6 = (3 * E * I2) / l6**3
+# =============================================================================
+
+k1 = 4156.66220987
+k2 = 1306.74363036
+k3 = 1399.14268468
+k4 = 817.24582693
+k5 = 78.00020622
+k6 = 78.00020622
 
 PI1y = m1 * g
 PI2y = m2 * g
@@ -74,7 +90,7 @@ def derivatives(s, t):
     th_  = s[12]
 
     # Prescribed rotation: constant speed (omega = 0 here), so thetad = thetadd = 0
-    thetad_  = 0.0
+    thetad_  = np.pi/24
     thetadd_ = 0.0
 
     sin_th = np.sin(th_)
@@ -246,6 +262,17 @@ R_I4y = (cos_th * m4 * (m5 * w5 + m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 - 
 R_B55y = (m5 * (m6 * (w5 - w6) * sin_th ** 2 + w5 * m4) * thetadd - m5 * (m6 * (l5 + l6) * sin_th ** 2 + l5 * m4) * thetad ** 2 + 2 * m5 * ((sin_th ** 2 * m6 + m4) * w4d - sin_th ** 2 * w5d * m6) * thetad + cos_th * (PI5y * m6 - PI6y * m5) * sin_th ** 2 + m5 * ((-k5 * w5 - k6 * w6) * cos_th + k4 * w4) * sin_th + cos_th * PI5y * m4) / (sin_th ** 2 * (m5 + m6) + m4)
 R_B56y = (m6 * (m5 * (w5 - w6) * sin_th ** 2 - w6 * m4) * thetadd - m6 * (m5 * (l5 + l6) * sin_th ** 2 + l6 * m4) * thetad ** 2 + 2 * m6 * ((-m5 * sin_th ** 2 - m4) * w5d + sin_th ** 2 * w4d * m5) * thetad + cos_th * (PI5y * m6 - PI6y * m5) * sin_th ** 2 - m6 * ((-k5 * w5 - k6 * w6) * cos_th + k4 * w4) * sin_th - cos_th * PI6y * m4) / (sin_th ** 2 * (m5 + m6) + m4)
 
+# =============================================================================
+# # Formulas from Leif
+# R_I1y = (cos_th * m4 * (m5 * w5 + m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d + m6 * w6d) * thetad + (m5 - m6) * (PI1y + PI2y + PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 - k6 * w6)) * sin_th + m4 * ((PI5y - PI6y) * cos_th ** 2 + PI1y + PI2y + PI3y + PI4y)) / (sin_th ** 2 * (m5 - m6) + m4)
+# R_I2y = (cos_th * m4 * (m5 * w5 + m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d + m6 * w6d) * thetad + (m5 - m6) * (PI2y + PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 - k6 * w6)) * sin_th + ((PI5y - PI6y) * cos_th ** 2 + PI2y + PI3y + PI4y) * m4) / (sin_th ** 2 * (m5 - m6) + m4)
+# R_I3y = (cos_th * m4 * (m5 * w5 + m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d + m6 * w6d) * thetad + (m5 - m6) * (PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 - k6 * w6)) * sin_th + ((PI5y - PI6y) * cos_th ** 2 + PI3y + PI4y) * m4) / (sin_th ** 2 * (m5 - m6) + m4)
+# R_I4y = (cos_th * m4 * (m5 * w5 + m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d + m6 * w6d) * thetad + PI4y * (m5 - m6) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 - k6 * w6)) * sin_th + ((PI5y - PI6y) * cos_th ** 2 + PI4y) * m4) / (sin_th ** 2 * (m5 - m6) + m4)
+# R_B55y = (-m5 * (m6 * (w5 + w6) * sin_th ** 2 - w5 * m4) * thetadd + m5 * (m6 * (l5 + l6) * sin_th ** 2 - l5 * m4) * thetad ** 2 - 2 * m5 * ((sin_th ** 2 * m6 - m4) * w5d + m6 * sin_th ** 2 * w6d) * thetad - cos_th * (PI5y * m6 - PI6y * m5) * sin_th ** 2 + m5 * ((-k5 * w5 + k6 * w6) * cos_th + k4 * w4) * sin_th + cos_th * PI5y * m4) / (sin_th ** 2 * (m5 - m6) + m4)
+# R_B56y = (-(m5 * (w5 + w6) * sin_th ** 2 + w6 * m4) * m6 * thetadd + (m5 * (l5 + l6) * sin_th ** 2 + l6 * m4) * m6 * thetad ** 2 - 2 * ((-sin_th ** 2 * m5 - m4) * w6d - m5 * sin_th ** 2 * w5d) * m6 * thetad - cos_th * (PI5y * m6 - PI6y * m5) * sin_th ** 2 + ((-k5 * w5 + k6 * w6) * cos_th + k4 * w4) * m6 * sin_th + cos_th * PI6y * m4) / (sin_th ** 2 * (m5 - m6) + m4)
+# =============================================================================
+
+# Sum of forces on the bodies
 F_I1[:, 0] = R_I2x - R_I1x
 F_I2[:, 0] = R_I3x - R_I2x
 F_I3[:, 0] = R_I4x - R_I3x
@@ -259,6 +286,7 @@ F_I3[:, 1] = -PI3y + R_I3y - R_I4y
 F_I4[:, 1] = -PI4y + R_I4y + k5 * w5 * sin_th - cos_th * R_B55y + k6 * w6 * sin_th + cos_th * R_B56y
 F_B55[:, 1] = +cos_th * PI5y
 F_B56[:, 1] = -cos_th * PI6y
+
 
 # Relative position vectors
 rIoa[:, 0] = w1[i]
@@ -317,16 +345,6 @@ if plot_lines:
         plt.show()
 
         # Plot net forces in global y-direction over time
-        fig, ax, _ = scivis.plot_line(
-            t_int, np.stack([F_I1[:, 1], F_I2[:, 1], F_I3[:, 1],
-                             F_I4[:, 1], F_I5[:, 1], F_I6[:, 1]], axis=0),
-            plt_labels=[f"Mass{i+1:d}" for i in range(6)], show_legend=False,
-            colors=colors, linestyles = "-", linewidths=1.6
-            )
-        ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
-        ax.set_title("Net forces in global y-direction over time")
-        plt.show()
-
         fig, ax, _ = scivis.plot_line(
             t_int, np.stack([F_I1[:, 1], F_I2[:, 1], F_I3[:, 1],
                              F_I4[:, 1], F_I5[:, 1], F_I6[:, 1]], axis=0),

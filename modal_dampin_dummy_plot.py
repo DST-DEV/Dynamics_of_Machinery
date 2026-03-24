@@ -18,9 +18,9 @@ omega_rads = omega_Hz * 2 * np.pi
 xi_alpha = alpha / (2*omega_rads)
 xi_beta =  beta * omega_rads/ 2
 xi = xi_alpha + xi_beta
-rcparams = scivis.rcparams._prepare_rcparams(profile="partsize", scale=.65)
+rcparams = scivis.rcparams._prepare_rcparams(profile="partsize", scale=.55)
 with mpl.rc_context(rcparams):
-    fig, ax = scivis.subplots(figsize=(16, 8))
+    fig, ax = scivis.subplots(figsize=(20, 8))
     ax.plot(omega_Hz, xi_alpha, ls="-", lw=2, c=colors[0],
             label=r"$\xi=\alpha/(2\omega)$")
     ax.plot(omega_Hz, xi_beta, ls="-", lw=2, c=colors[1],
@@ -30,8 +30,8 @@ with mpl.rc_context(rcparams):
     ax.grid(False)
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.set_xlabel(r"$\omega$", size=35)
-    ax.set_ylabel(r"$\xi$", size=35)
+    ax.set_xlabel(r"$\omega$", size=45)
+    ax.set_ylabel(r"$\xi$", size=45)
     ax.set_ylim([0, 0.006])
     ax.legend(loc="center", bbox_to_anchor=(0.5, .9))
     ax.spines['right'].set_visible(False)
@@ -40,4 +40,4 @@ with mpl.rc_context(rcparams):
 
 
     exp_fld.mkdir(exist_ok=True)
-    fig.savefig(exp_fld / "proportional_damping_sketch.pdf")
+    fig.savefig(exp_fld / "proportional_damping_sketch.svg")
