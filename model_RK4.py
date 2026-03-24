@@ -83,9 +83,9 @@ def derivatives(s, t):
     w1dd_ = (-k1 * w1_ + k2 * w2_) / m1
     w2dd_ = (-k2 * (m1 + m2) * w2_ + w1_ * k1 * m2 + k3 * w3_ * m1) / m2 / m1
     w3dd_ = (-k3 * (m2 + m3) * w3_ + w2_ * k2 * m3 + w4_ * k4 * m2) / m3 / m2
-    w4dd_ = (m3 * sin_th * (m5 * w5_ - m6 * w6_) * thetadd_ - m3 * sin_th * (l5 * m5 + l6 * m6) * thetad_ ** 2 + 2 * m3 * sin_th * (m5 * w5d_ - m6 * w6d_) * thetad_ + (k3 * w3_ - k4 * w4_) * (m5 - m6) * sin_th ** 2 + cos_th * m3 * (PI5y - PI6y) * sin_th + m3 * (k5 * w5_ + k6 * w6_) * cos_th - k4 * (m3 + m4) * w4_ + w3_ * k3 * m4) / (sin_th ** 2 * (m5 - m6) + m4) / m3
-    w5dd_ = (-m5 * (-l5 * (m5 - m6) * sin_th ** 2 + sin_th * (m5 * w5_ - m6 * w6_) * cos_th - l5 * m4) * thetadd_ + m5 * (w5_ * (m5 - m6) * sin_th ** 2 + sin_th * (l5 * m5 + l6 * m6) * cos_th + w5_ * m4) * thetad_ ** 2 - 2 * cos_th * sin_th * m5 * (m5 * w5d_ - m6 * w6d_) * thetad_ + sin_th ** 3 * PI5y * m6 + w5_ * sin_th ** 2 * k5 * m6 + (PI6y * m5 * cos_th ** 2 - PI5y * (m5 + m4)) * sin_th - w6_ * cos_th ** 2 * k6 * m5 + w4_ * cos_th * k4 * m5 - w5_ * k5 * (m5 + m4)) / m5 / (sin_th ** 2 * (m5 - m6) + m4)
-    w6dd_ = (-(l6 * (m5 - m6) * sin_th ** 2 + sin_th * (m5 * w5_ - m6 * w6_) * cos_th + l6 * m4) * m6 * thetadd_ + (w6_ * (m5 - m6) * sin_th ** 2 + sin_th * (l5 * m5 + l6 * m6) * cos_th + w6_ * m4) * m6 * thetad_ ** 2 - 2 * cos_th * sin_th * m6 * (m5 * w5d_ - m6 * w6d_) * thetad_ - sin_th ** 3 * PI6y * m5 - w6_ * sin_th ** 2 * k6 * m5 + (-m6 * PI5y * cos_th ** 2 - PI6y * (m4 - m6)) * sin_th - m6 * (k5 * w5_ + 2 * k6 * w6_) * cos_th ** 2 + w4_ * cos_th * k4 * m6 - w6_ * k6 * (m4 - m6)) / (sin_th ** 2 * (m5 - m6) + m4) / m6
+    w4dd_ = (m3 * sin_th * (m5 * w5_ + m6 * w6_) * thetadd_ - m3 * sin_th * (l5 * m5 - l6 * m6) * thetad_ ** 2 + 2 * m3 * sin_th * (m5 * w4d_ + m6 * w5d_) * thetad_ + (k3 * w3_ - k4 * w4_) * (m5 + m6) * sin_th ** 2 + cos_th * m3 * (PI5y + PI6y) * sin_th + m3 * (k5 * w5_ + k6 * w6_) * cos_th - k4 * (m3 + m4) * w4_ + w3_ * k3 * m4) / m3 / (sin_th ** 2 * (m5 + m6) + m4)
+    w5dd_ = (-m5 * (-l5 * (m5 + m6) * sin_th ** 2 + sin_th * (m5 * w5_ + m6 * w6_) * cos_th - l5 * m4) * thetadd_ + m5 * (w5_ * (m5 + m6) * sin_th ** 2 + sin_th * (l5 * m5 - l6 * m6) * cos_th + w5_ * m4) * thetad_ ** 2 - 2 * cos_th * sin_th * m5 * (m5 * w4d_ + m6 * w5d_) * thetad_ - sin_th ** 3 * PI5y * m6 - w5_ * sin_th ** 2 * k5 * m6 + (-PI6y * cos_th ** 2 * m5 - PI5y * (m4 + m5)) * sin_th - w6_ * cos_th ** 2 * k6 * m5 + w4_ * cos_th * k4 * m5 - w5_ * k5 * (m4 + m5)) / m5 / (sin_th ** 2 * (m5 + m6) + m4)
+    w6dd_ = (-m6 * (l6 * (m5 + m6) * sin_th ** 2 + sin_th * (m5 * w5_ + m6 * w6_) * cos_th + l6 * m4) * thetadd_ + m6 * (w6_ * (m5 + m6) * sin_th ** 2 + sin_th * (l5 * m5 - l6 * m6) * cos_th + w6_ * m4) * thetad_ ** 2 - 2 * cos_th * sin_th * m6 * (m5 * w4d_ + m6 * w5d_) * thetad_ - sin_th ** 3 * PI6y * m5 - w6_ * sin_th ** 2 * k6 * m5 + (-PI5y * cos_th ** 2 * m6 - PI6y * (m4 + m6)) * sin_th - cos_th ** 2 * w5_ * k5 * m6 + w4_ * cos_th * k4 * m6 - w6_ * k6 * (m4 + m6)) / (sin_th ** 2 * (m5 + m6) + m4) / m6
 
     try:
         np.array([
@@ -145,12 +145,6 @@ rIcd = np.zeros((n_int, 3))
 rB5de = np.zeros((n_int, 3))
 rB5df = np.zeros((n_int, 3))
 
-# rIob = np.zeros((n_int, 3))
-# rIoc = np.zeros((n_int, 3))
-# rIod = np.zeros((n_int, 3))
-# rIoe = np.zeros((n_int, 3))
-# rIof = np.zeros((n_int, 3))
-
 R_I1x = np.zeros(n_int)
 R_I2x = np.zeros(n_int)
 R_I3x = np.zeros(n_int)
@@ -165,12 +159,12 @@ R_I4y = np.zeros(n_int)
 R_B55y = np.zeros(n_int)
 R_B56y = np.zeros(n_int)
 
-R_I1 = np.zeros((n_int, 3))
-R_I2 = np.zeros((n_int, 3))
-R_I3 = np.zeros((n_int, 3))
-R_I4 = np.zeros((n_int, 3))
-R_B55 = np.zeros((n_int, 3))
-R_B56 = np.zeros((n_int, 3))
+F_I1 = np.zeros((n_int, 3))
+F_I2 = np.zeros((n_int, 3))
+F_I3 = np.zeros((n_int, 3))
+F_I4 = np.zeros((n_int, 3))
+F_B55 = np.zeros((n_int, 3))
+F_B56 = np.zeros((n_int, 3))
 
 T45 = np.zeros((n_int, 3, 3))
 T54 = np.zeros((n_int, 3, 3))
@@ -178,30 +172,11 @@ T54 = np.zeros((n_int, 3, 3))
 # %% Initial conditions
 theta[0] = np.pi / 2
 T45[0] = np.array(
-    [[np.cos(theta[0]),  np.sin(theta[0]), 0],
-     [-np.sin(theta[0]), np.cos(theta[0]), 0],
+    [[np.cos(theta[0]),  -np.sin(theta[0]), 0],
+     [np.sin(theta[0]), np.cos(theta[0]), 0],
      [0, 0, 1]]
 )
 T54[0] = T45[0].T
-
-# Position vectors
-# rIab = np.array([0, l2, 0])
-# rIbc = np.array([0, l3, 0])
-# rIcd = np.array([0, l4, 0])
-# rB5de = np.array([0, l5, 0])
-# rB5df = np.array([0, -l6, 0])
-
-# Get other position vectors in inertial reference frame
-# rIde = np.dot(T45[0], rB5de)
-# rIdf = np.dot(T45[0], rB5df)
-
-# Creating the position vectors describing masses trajectories
-# rIoa[0] = np.array([0, l1, 0])
-# rIob[0] = rIoa[0] + rIab
-# rIoc[0] = rIob[0] + rIbc
-# rIod[0] = rIoc[0] + rIcd
-# rIoe[0] = rIod[0] + rIde
-# rIof[0] = rIoe[0] + rIdf
 
 # Pack initial state: [w1, w1d, w2, w2d, w3, w3d, w4, w4d, w5, w5d, w6, w6d, theta]
 state = np.array([
@@ -246,8 +221,8 @@ for i in range(1, n_int):
 
     # Update transformation matrix
     T45[i] = np.array(
-        [[cos_th,  sin_th, 0],
-         [-sin_th, cos_th, 0],
+        [[cos_th,  -sin_th, 0],
+         [sin_th, cos_th, 0],
          [0, 0, 1]]
     )
     T54[i] = T45[i].T
@@ -257,34 +232,33 @@ sin_th = np.sin(theta)
 cos_th = np.cos(theta)
 
 # Reaction forces
-R_I1x = 48 * E * I1 * w1 / l1**3
-R_I2x = 48 * E * I1 * w2 / l2**3
-R_I3x = 24 * E * I1 * w3 / l3**3
-R_I4x = 24 * E * I1 * w4 / l4**3
-R_B55x = 3 * E * I2 * w5 / l5**3
-R_B56x = -m6 * g * sin_th - 3 * E * I2 * w6 / l6**3
+R_I1x = k1 * w1
+R_I2x = k2 * w2
+R_I3x = k3 * w3
+R_I4x = k4 * w4
+R_B55x = k5 * w5
+R_B56x = k6 * w6
 
-R_I1y = (cos_th * m4 * (m5 * w5 - m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d - m6 * w6d) * thetad + (m5 - m6) * (PI1y + PI2y + PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + m4 * ((PI5y - PI6y) * cos_th ** 2 + PI1y + PI2y + PI3y + PI4y)) / (sin_th ** 2 * (m5 - m6) + m4)
-R_I2y = (cos_th * m4 * (m5 * w5 - m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d - m6 * w6d) * thetad + (m5 - m6) * (PI2y + PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + ((PI5y - PI6y) * cos_th ** 2 + PI2y + PI3y + PI4y) * m4) / (sin_th ** 2 * (m5 - m6) + m4)
-R_I3y = (cos_th * m4 * (m5 * w5 - m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d - m6 * w6d) * thetad + (m5 - m6) * (PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + ((PI5y - PI6y) * cos_th ** 2 + PI3y + PI4y) * m4) / (sin_th ** 2 * (m5 - m6) + m4)
-R_I4y = (cos_th * m4 * (m5 * w5 - m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 + l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w5d - m6 * w6d) * thetad + PI4y * (m5 - m6) * sin_th ** 2 + (w4 * k4 * (m5 - m6) * cos_th - (m5 - m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + ((PI5y - PI6y) * cos_th ** 2 + PI4y) * m4) / (sin_th ** 2 * (m5 - m6) + m4)
-R_B55y = (-m5 * (m6 * (w5 - w6) * sin_th ** 2 - w5 * m4) * thetadd + m5 * (m6 * (l5 + l6) * sin_th ** 2 - l5 * m4) * thetad ** 2 - 2 * m5 * ((sin_th ** 2 * m6 - m4) * w5d - m6 * sin_th ** 2 * w6d) * thetad - cos_th * (PI5y * m6 - PI6y * m5) * sin_th ** 2 + m5 * ((-k5 * w5 - k6 * w6) * cos_th + k4 * w4) * sin_th + cos_th * PI5y * m4) / (sin_th ** 2 * (m5 - m6) + m4)
-R_B56y = (-(m5 * (w5 - w6) * sin_th ** 2 - w6 * m4) * m6 * thetadd + (m5 * (l5 + l6) * sin_th ** 2 + l6 * m4) * m6 * thetad ** 2 - 2 * ((-sin_th ** 2 * m5 - m4) * w6d + m5 * sin_th ** 2 * w5d) * m6 * thetad - cos_th * (PI5y * m6 - PI6y * m5) * sin_th ** 2 + ((-k5 * w5 - k6 * w6) * cos_th + k4 * w4) * m6 * sin_th + cos_th * PI6y * m4) / (sin_th ** 2 * (m5 - m6) + m4)
+R_I1y = (cos_th * m4 * (m5 * w5 + m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 - l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w4d + m6 * w5d) * thetad + (m5 + m6) * (PI1y + PI2y + PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 + m6) * cos_th - (m5 + m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + m4 * ((PI5y + PI6y) * cos_th ** 2 + PI1y + PI2y + PI3y + PI4y)) / (sin_th ** 2 * (m5 + m6) + m4)
+R_I2y = (cos_th * m4 * (m5 * w5 + m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 - l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w4d + m6 * w5d) * thetad + (m5 + m6) * (PI2y + PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 + m6) * cos_th - (m5 + m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + m4 * ((PI5y + PI6y) * cos_th ** 2 + PI2y + PI3y + PI4y)) / (sin_th ** 2 * (m5 + m6) + m4)
+R_I3y = (cos_th * m4 * (m5 * w5 + m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 - l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w4d + m6 * w5d) * thetad + (m5 + m6) * (PI3y + PI4y) * sin_th ** 2 + (w4 * k4 * (m5 + m6) * cos_th - (m5 + m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + ((PI5y + PI6y) * cos_th ** 2 + PI3y + PI4y) * m4) / (sin_th ** 2 * (m5 + m6) + m4)
+R_I4y = (cos_th * m4 * (m5 * w5 + m6 * w6) * thetadd - cos_th * m4 * (l5 * m5 - l6 * m6) * thetad ** 2 + 2 * cos_th * m4 * (m5 * w4d + m6 * w5d) * thetad + PI4y * (m5 + m6) * sin_th ** 2 + (w4 * k4 * (m5 + m6) * cos_th - (m5 + m6 + m4) * (k5 * w5 + k6 * w6)) * sin_th + m4 * ((PI5y + PI6y) * cos_th ** 2 + PI4y)) / (sin_th ** 2 * (m5 + m6) + m4)
+R_B55y = (m5 * (m6 * (w5 - w6) * sin_th ** 2 + w5 * m4) * thetadd - m5 * (m6 * (l5 + l6) * sin_th ** 2 + l5 * m4) * thetad ** 2 + 2 * m5 * ((sin_th ** 2 * m6 + m4) * w4d - sin_th ** 2 * w5d * m6) * thetad + cos_th * (PI5y * m6 - PI6y * m5) * sin_th ** 2 + m5 * ((-k5 * w5 - k6 * w6) * cos_th + k4 * w4) * sin_th + cos_th * PI5y * m4) / (sin_th ** 2 * (m5 + m6) + m4)
+R_B56y = (m6 * (m5 * (w5 - w6) * sin_th ** 2 - w6 * m4) * thetadd - m6 * (m5 * (l5 + l6) * sin_th ** 2 + l6 * m4) * thetad ** 2 + 2 * m6 * ((-m5 * sin_th ** 2 - m4) * w5d + sin_th ** 2 * w4d * m5) * thetad + cos_th * (PI5y * m6 - PI6y * m5) * sin_th ** 2 - m6 * ((-k5 * w5 - k6 * w6) * cos_th + k4 * w4) * sin_th - cos_th * PI6y * m4) / (sin_th ** 2 * (m5 + m6) + m4)
 
-R_I1[:, 0] = R_I2x - R_I1x
-R_I2[:, 0] = R_I3x - R_I2x
-R_I3[:, 0] = R_I4x - R_I3x
-R_I4[:, 0] = R_B55x * cos_th + R_B56x * cos_th - R_I4x + R_B55y * sin_th - R_B56y * sin_th
-R_B55[:, 0] = -sin_th * m5 * g - R_B55x
-R_B56[:, 0] = -sin_th * m6 * g - R_B56x
+F_I1[:, 0] = R_I2x - R_I1x
+F_I2[:, 0] = R_I3x - R_I2x
+F_I3[:, 0] = R_I4x - R_I3x
+F_I4[:, 0] = R_B55x * cos_th + R_B56x * cos_th - R_I4x + R_B55y * sin_th - R_B56y * sin_th
+F_B55[:, 0] = -sin_th * m5 * g - R_B55x
+F_B56[:, 0] = -sin_th * m6 * g - R_B56x
 
-R_I1[:, 1] = -PI1y + R_I1y - R_I2y
-R_I2[:, 1] = -PI2y + R_I2y - R_I3y
-R_I3[:, 1] = -PI3y + R_I3y - R_I4y
-R_I4[:, 1] = -PI4y + R_I4y + k5 * w5 * sin_th - cos_th * R_B55y + k6 * w6 * sin_th + cos_th * R_B56y
-R_B55[:, 1] = -cos_th * PI5y
-R_B56[:, 1] = -cos_th * PI6y
-
+F_I1[:, 1] = -PI1y + R_I1y - R_I2y
+F_I2[:, 1] = -PI2y + R_I2y - R_I3y
+F_I3[:, 1] = -PI3y + R_I3y - R_I4y
+F_I4[:, 1] = -PI4y + R_I4y + k5 * w5 * sin_th - cos_th * R_B55y + k6 * w6 * sin_th + cos_th * R_B56y
+F_B55[:, 1] = +cos_th * PI5y
+F_B56[:, 1] = -cos_th * PI6y
 
 # Relative position vectors
 rIoa[:, 0] = w1[i]
@@ -312,48 +286,73 @@ rIod = rIoa + rIab + rIbc + rIcd
 rIoe = rIoa + rIab + rIbc + rIcd + np.einsum("nij,nj->ni", T45, rB5de)
 rIof = rIoa + rIab + rIbc + rIcd + np.einsum("nij,nj->ni", T45, rB5df)
 
-R_I5 = np.einsum("nij,nj->ni", T45, R_B55)
-R_I6 = np.einsum("nij,nj->ni", T45, R_B56)
+F_I5 = np.einsum("nij,nj->ni", T45, F_B55)
+F_I6 = np.einsum("nij,nj->ni", T45, F_B56)
 
 # %% Plots
 if plot_lines:
     rcparams = scivis.rcparams._prepare_rcparams()
+    colors = ["#045893", "#db6100", "#108010", "#b40c0d", "#74499c", "#c158a0"]
 
     with mpl.rc_context(rcparams):
         # Plot beam deflections over time
         fig, ax, _ = scivis.plot_line(
             t_int, np.stack([w1, w2, w3, w4, w5, w6], axis=0),
             plt_labels=[f"Mass{i+1:d}" for i in range(6)], show_legend=False,
-            cmap="jet", linestyles = "-"
+            colors=colors, linestyles = "-", linewidths=1.6
             )
         ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+        ax.set_title("Beam deflections over time")
         plt.show()
 
-        # Plot reaction forces in global x-direction over time
+        # Plot net forces in global x-direction over time
         fig, ax, _ = scivis.plot_line(
-            t_int, np.stack([R_I1[:, 0], R_I2[:, 0], R_I3[:, 0],
-                             R_I4[:, 0], R_I5[:, 0], R_I6[:, 0]], axis=0),
+            t_int, np.stack([F_I1[:, 0], F_I2[:, 0], F_I3[:, 0],
+                             F_I4[:, 0], F_I5[:, 0], F_I6[:, 0]], axis=0),
             plt_labels=[f"Mass{i+1:d}" for i in range(6)], show_legend=False,
-            cmap="plasma", linestyles = "-"
+            colors=colors, linestyles = "-", linewidths=1.6
             )
         ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+        ax.set_title("Net forces in global x-direction over time")
         plt.show()
 
-        # Plot reaction forces in global y-direction over time
+        # Plot net forces in global y-direction over time
         fig, ax, _ = scivis.plot_line(
-            t_int, np.stack([R_I1[:, 1], R_I2[:, 1], R_I3[:, 1],
-                             R_I4[:, 1], R_I5[:, 1], R_I6[:, 1]], axis=0),
+            t_int, np.stack([F_I1[:, 1], F_I2[:, 1], F_I3[:, 1],
+                             F_I4[:, 1], F_I5[:, 1], F_I6[:, 1]], axis=0),
             plt_labels=[f"Mass{i+1:d}" for i in range(6)], show_legend=False,
-            cmap="plasma", linestyles = "-"
+            colors=colors, linestyles = "-", linewidths=1.6
             )
         ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+        ax.set_title("Net forces in global y-direction over time")
         plt.show()
 
-        # Plot reaction forces in local y-direction for blade nodes over time
         fig, ax, _ = scivis.plot_line(
-            t_int, np.stack([R_B55[:, 0], R_B56[:, 0]], axis=0),
+            t_int, np.stack([F_I1[:, 1], F_I2[:, 1], F_I3[:, 1],
+                             F_I4[:, 1], F_I5[:, 1], F_I6[:, 1]], axis=0),
+            plt_labels=[f"Mass{i+1:d}" for i in range(6)], show_legend=False,
+            colors=colors, linestyles = "-", linewidths=1.6
+            )
+        ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+        ax.set_title("Net forces in global y-direction over time")
+        plt.show()
+
+        # Plot net forces in local x-direction for blade nodes over time
+        fig, ax, _ = scivis.plot_line(
+            t_int, np.stack([F_B55[:, 0], F_B56[:, 0]], axis=0),
             plt_labels=[f"Mass{i+1:d}" for i in range(4, 6)], show_legend=False,
-            cmap="plasma", linestyles = "-"
+            colors=colors[:2], linestyles = "-", linewidths=1.6
             )
         ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+        ax.set_title("Net forces in local x-direction for blade nodes over time")
+        plt.show()
+
+        # Plot net forces in local y-direction for blade nodes over time
+        fig, ax, _ = scivis.plot_line(
+            t_int, np.stack([F_B55[:, 1], F_B56[:, 1]], axis=0),
+            plt_labels=[f"Mass{i+1:d}" for i in range(4, 6)], show_legend=False,
+            colors=colors[:2], linestyles = "-", linewidths=1.6
+            )
+        ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+        ax.set_title("Net forces in local y-direction for blade nodes over time")
         plt.show()
