@@ -195,6 +195,12 @@ T45[0] = np.array(
 T54[0] = T45[0].T
 
 # Pack initial state: [w1, w1d, w2, w2d, w3, w3d, w4, w4d, w5, w5d, w6, w6d, theta]
+w5_stat = -PI5y*np.sin(theta[0])/k5
+w6_stat = -PI6y*np.sin(theta[0])/k6
+
+w5[0] = -PI5y*np.sin(theta[0])/k5
+w6[0] = -PI6y*np.sin(theta[0])/k6
+
 state = np.array([
     w1[0], w1d[0],
     w2[0], w2d[0],
