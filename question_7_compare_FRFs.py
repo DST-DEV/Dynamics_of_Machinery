@@ -36,12 +36,12 @@ l6 = 0.430
 # m4 = 2.732
 # m5 = 0.774
 # m6 = 0.774
-m1 = 2.18
-m2 = 1.84
-m3 = 1.85
-m4 = 2.60
-m5 = 0.74
-m6 = 0.74
+m1 = 2.4087
+m2 = 1.8440
+m3 = 1.8459
+m4 = 2.5954
+m5 = 0.7353
+m6 = 0.7353
 g = 9.81
 mbeam1 = 0.3
 mbeam2 = 0.421
@@ -61,12 +61,12 @@ I2 = (b2 * h2**3) / 12
 # k4 = 2 * (12 * E * I1) / l4**3
 # k5 = (3 * E * I2) / l5**3
 # k6 = (3 * E * I2) / l6**3
-k1 = 4156.66
-k2 = 1306.74
-k3 = 1399.14
-k4 = 817.25
-k5 = 78.00
-k6 = 78.00
+k1 = 4695.4364
+k2 = 1430.8602
+k3 = 1275.9561
+k4 = 895.1968
+k5 = 85.4288
+k6 = 85.4288
 N_DOF = 6
 
 # Mass matrix
@@ -153,19 +153,17 @@ xi_chosen = np.array([0.00553, 0.00419, 0.00353, 0.00292, 0.00334, 0.00379])
 
 eigfreqs_fit = eigfreqs_exp if FREQUENCY_SOURCE == "experimental" else eigfreqs_model
 
+alpha = 0.07682
+beta = 0.000115
+
 print("\n" + "=" * 70)
 print("  DAMPING RATIOS USED FOR RAYLEIGH DAMPING MATRIX")
 print("=" * 70)
-print(f"Using custom damping methods per mode:")
-for i in range(N_DOF):
-    print(f"  Mode {i+1}: custom   -> zeta = {xi_chosen[i]:.6f}")
+print("Using previously adjusted D matrix from model validation:")
 print(f"\nFrequency source: {FREQUENCY_SOURCE}")
 
-# Fit Rayleigh damping parameters
-alpha, beta = fit_damping(xi=xi_chosen, eifreqs=eigfreqs_fit)
-
-# Calculate damping matrix
-D = alpha * M + beta * K
+# Load damping matrix
+D = np.load(Path(__file__).parent / "D_adjusted.npy")
 
 print("\n" + "=" * 70)
 print("  THEORETICAL MODEL PARAMETERS")
@@ -285,63 +283,60 @@ print("Experimental FRF data loaded.")
 colors = ["tab:blue", "tab:red", "tab:green", "tab:orange", "tab:purple", "tab:brown"]
 mass_labels = [f"Mass {i+1}" for i in range(N_DOF)]
 
-# Create 3 figures, each with 2 subplots (one for each pair of DOFs)
-figs_frf = []
-for pair_idx in range(3):
-    fig_pair, axes_pair = plt.subplots(1, 2, figsize=(16, 4))
-    figs_frf.append(fig_pair)
+# Create 1 figure with 6 subplots (3 rows, 2 columns)
+fig_frf_all, axes_all = plt.subplots(3, 2, figsize=(24, 16))
+axes_flat = axes_all.flatten()
 
-    for j in range(2):
-        i = pair_idx * 2 + j
-        ax = axes_pair[j]
+for i in range(N_DOF):
+    ax = axes_flat[i]
 
-        # Plot experimental FRF (H2)
-        ax.semilogy(
-            F_exp,
-            np.abs(H_experimental[i, freq_idx]),
-            color=colors[i],
-            linewidth=1.5,
-            label="Experimental (H2)",
-            alpha=0.7,
-        )
+    # Plot experimental FRF (H2)
+    ax.semilogy(
+        F_exp,
+        np.abs(H_experimental[i, freq_idx]),
+        color=colors[i],
+        linewidth=1.5,
+        label="Experimental (H2)",
+        alpha=0.7,
+    )
 
-        # Plot theoretical FRF
-        ax.semilogy(
-            freq_hz,
-            np.abs(H_theoretical[i, :]),
-            "k--",
-            linewidth=1.2,
-            label="Theoretical",
+    # Plot theoretical FRF
+    ax.semilogy(
+        freq_hz,
+        np.abs(H_theoretical[i, :]),
+        "k--",
+        linewidth=1.2,
+        label="Theoretical",
+        alpha=0.8,
+    )
+
+    ax.set_xlim([0.5, 10])
+    ax.grid(True, which="both", alpha=0.3)
+    ax.set_xlabel("Frequency [Hz]", fontsize=20)
+    ax.set_ylabel("|H| [m/s²/N]", fontsize=20)
+    ax.set_title(f"{mass_labels[i]}", fontsize=24, fontweight="bold")
+    ax.legend(fontsize=16, loc="best")
+
+    # Increase tick label size
+    ax.tick_params(axis="both", which="major", labelsize=18)
+
+    # Add vertical lines at theoretical natural frequencies with frequency labels
+    for fn in eigfreqs_model:
+        ax.axvline(fn, color="gray", linestyle=":", linewidth=0.7, alpha=0.5)
+        # Add frequency label below the line
+        ax.text(
+            fn,
+            ax.get_ylim()[0] * 1.5,
+            f"{fn:.1f} Hz",
+            rotation=90,
+            verticalalignment="bottom",
+            horizontalalignment="right",
+            color="gray",
+            fontsize=16,
             alpha=0.8,
         )
 
-        ax.set_xlim([0.5, 10])
-        ax.grid(True, which="both", alpha=0.3)
-        ax.set_xlabel("Frequency [Hz]", fontsize=16)
-        ax.set_ylabel("|H| [m/s²/N]", fontsize=16)
-        ax.set_title(f"{mass_labels[i]}", fontsize=18, fontweight="bold")
-        ax.legend(fontsize=12, loc="best")
-
-        # Increase tick label size
-        ax.tick_params(axis="both", which="major", labelsize=14)
-
-        # Add vertical lines at theoretical natural frequencies with frequency labels
-        for fn in eigfreqs_model:
-            ax.axvline(fn, color="gray", linestyle=":", linewidth=0.7, alpha=0.5)
-            # Add frequency label below the line
-            ax.text(
-                fn,
-                ax.get_ylim()[0] * 1.5,
-                f"{fn:.1f} Hz",
-                rotation=90,
-                verticalalignment="bottom",
-                horizontalalignment="right",
-                color="gray",
-                fontsize=12,
-                alpha=0.8,
-            )
-
-    fig_pair.tight_layout()
+fig_frf_all.tight_layout()
 
 # ═══════════════════════════════════════════════════════
 # PART 4: OVERLAY PLOT - ALL 6 DOFs ON ONE FIGURE
@@ -743,13 +738,11 @@ figures_dir = Path(__file__).parent / "figures"
 figures_dir.mkdir(exist_ok=True)
 
 # Save both figures
-for pair_idx, fig_pair in enumerate(figs_frf):
-    m1, m2 = pair_idx * 2 + 1, pair_idx * 2 + 2
-    fig_pair.savefig(
-        figures_dir / f"FRF_comparison_individual_{m1}_{m2}.pdf",
-        dpi=300,
-        bbox_inches="tight",
-    )
+fig_frf_all.savefig(
+    figures_dir / "FRF_comparison_individual_all.pdf",
+    dpi=300,
+    bbox_inches="tight",
+)
 
 fig2.savefig(figures_dir / "FRF_comparison_overlay.pdf", dpi=300, bbox_inches="tight")
 fig3.savefig(figures_dir / "mode_shapes_normalized.pdf", dpi=300, bbox_inches="tight")
@@ -758,9 +751,7 @@ print("\n" + "=" * 70)
 print("  FIGURES SAVED")
 print("=" * 70)
 print(f"Figures saved to: {figures_dir}")
-for pair_idx in range(3):
-    m1, m2 = pair_idx * 2 + 1, pair_idx * 2 + 2
-    print(f"  - FRF_comparison_individual_{m1}_{m2}.pdf")
+print("  - FRF_comparison_individual_all.pdf")
 print("  - FRF_comparison_overlay.pdf")
 print("  - mode_shapes_normalized.pdf")
 
