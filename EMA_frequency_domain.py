@@ -100,13 +100,13 @@ for i in range(N_ACC):
         F_p, Coh[i, freq_idx], color=colors[i], linewidth=1.0, label=acc_names[i]
     )
 
-ax_frf.set_xlim([0.5, Fs / 2])
+ax_frf.set_xlim([0.5, 10])
 ax_frf.grid(True, which="both")
 ax_frf.set_ylabel("|H2| [(m/s²)/N]", fontsize=13)
 ax_frf.set_title("Phase 1 – FRF Magnitude (H2) – All 6 Accelerometers", fontsize=13)
 ax_frf.legend(fontsize=10)
 
-ax_coh.set_xlim([0.5, Fs / 2])
+ax_coh.set_xlim([0.5, 10])
 ax_coh.set_ylim([0, 1.1])
 ax_coh.grid(True)
 ax_coh.set_ylabel("Coherence γ²(f)", fontsize=13)
@@ -350,18 +350,23 @@ for ax in (axes2[0], axes2[1]):
     ax.legend(fontsize=9)
 
 axes2[0].set_ylabel("|H1| [(m/s²)/N]", fontsize=12)
-axes2[0].set_title("Phase 2 – FRF H1 with resonance markers", fontsize=12)
+axes2[0].set_title("FRF H1", fontsize=12)
 axes2[1].set_ylabel("|H2| [(m/s²)/N]", fontsize=12)
-axes2[1].set_title("Phase 2 – FRF H2 with resonance markers", fontsize=12)
+axes2[1].set_title("FRF H2", fontsize=12)
 
-axes2[2].set_xlim([0.5, Fs / 2])
+axes2[2].set_xlim([0.5, 10])
 axes2[2].set_ylim([0, 1.1])
 axes2[2].grid(True)
 axes2[2].set_ylabel("Coherence", fontsize=12)
 axes2[2].set_xlabel("Frequency [Hz]", fontsize=12)
 axes2[2].legend(fontsize=9)
 
+
 fig2.tight_layout()
+
+plt.savefig("Phase2_FRF_Analysis.pdf", bbox_inches='tight')
+
+
 
 # ═══════════════════════════════════════════════════════
 # PHASE 2 – PLOT EXPERIMENTAL MODE SHAPES
