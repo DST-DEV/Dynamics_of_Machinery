@@ -3,6 +3,8 @@
 *.docx
 *.pptx
 *.pdf
+*.m
+/.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -185,3 +187,4 @@ cython_debug/
 .pdf
 .jpg
 .webp
+.m
